@@ -1,0 +1,21 @@
+<RCC>
+    <qresource prefix="/qml">
+        <file>src/ui/main.qml</file>
+        <file>src/ui/Intro.qml</file>
+        <file>src/ui/MuteSwitch.qml</file>
+        <file>src/ui/Game.qml</file>
+        <file>src/ui/QuestionWidget.qml</file>
+    </qresource>
+    <qresource prefix="/images">
+        <file>drawables/firstpagebg.png</file>
+        <file>drawables/outrobg.png</file>
+        <file>drawables/qnabg.png</file>
+        <file>drawables/mute.png</file>
+        <file>drawables/unmute.png</file>
+    </qresource>
+    <qresource prefix="/sounds">
+        <file>sounds/bingo.wav</file>
+        <file>sounds/ohno.wav</file>
+        <file>sounds/OMFG_Pizza.mp3</file>
+    </qresource>
+</RCC>
