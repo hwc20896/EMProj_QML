@@ -16,14 +16,17 @@ class ManagementBackend final : public QObject {
     Q_PROPERTY(QVariant currentQuestion READ currentQuestion NOTIFY currentQuestionChanged)
     Q_PROPERTY(int progress READ progress NOTIFY progressChanged)
     Q_PROPERTY(int currentQuestionIndex WRITE setCurrentQuestionIndex READ getCurrentQuestionIndex NOTIFY currentQuestionIndexChanged)
+    Q_PROPERTY(bool isMuted WRITE setCurrentMuted READ currentMuted NOTIFY currentMutedChanged)
     public:
         [[nodiscard]] int correctCount() const;
         [[nodiscard]] int incorrectCount() const;
         [[nodiscard]] QVariant currentQuestion() const;
         [[nodiscard]] int progress() const;
         [[nodiscard]] int getCurrentQuestionIndex() const;
+        [[nodiscard]] bool currentMuted() const;
     public slots:
         void setCurrentQuestionIndex(int index);
+        void setCurrentMuted(bool muted);
 
     signals:
         void correctCountChanged();
@@ -31,6 +34,7 @@ class ManagementBackend final : public QObject {
         void currentQuestionChanged();
         void progressChanged();
         void currentQuestionIndexChanged();
+        void currentMutedChanged();
         void answerResult(bool isCorrect, const QString& correctAnswer, int id);
 
     //  Class methods
@@ -46,6 +50,7 @@ class ManagementBackend final : public QObject {
 
         int currentQuestionIndex_ = -1;
         int progress_ = 0;
+        bool currentMuted_ = false;
 
         QList<QuestionData> questionList_;
         void clearQuestions();
@@ -54,8 +59,6 @@ class ManagementBackend final : public QObject {
     public:
         Q_INVOKABLE void playCorrect() const;
         Q_INVOKABLE void playIncorrect() const;
-
-        Q_INVOKABLE void setBackgroundMuted(bool muted) const;
 
         Q_INVOKABLE void startBackground() const;
         Q_INVOKABLE void stopBackground() const;

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.29)
 project(EMProj_QML)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -26,10 +26,12 @@ else()
 endif()
 
 set_target_properties(EMProj_QML PROPERTIES
-        AUTORCC ON
+    AUTORCC ON
 )
 
-target_include_directories(EMProj_QML PRIVATE src/headers)
+target_include_directories(EMProj_QML PRIVATE
+    src/headers
+)
 
 target_link_libraries(
     EMProj_QML PRIVATE

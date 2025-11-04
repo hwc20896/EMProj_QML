@@ -15,7 +15,7 @@ QVariant ManagementBackend::currentQuestion() const {
         const auto item = QVariant::fromValue(questionList_.at(currentQuestionIndex_));
         return item;
     }
-    return QVariant();
+    return {};
 }
 
 int ManagementBackend::progress() const {
@@ -26,11 +26,23 @@ int ManagementBackend::getCurrentQuestionIndex() const {
     return currentQuestionIndex_;
 }
 
+bool ManagementBackend::currentMuted() const {
+    return currentMuted_;
+}
+
 void ManagementBackend::setCurrentQuestionIndex(const int index) {
     if (index >= 0 && index < questionList_.size() && index != currentQuestionIndex_) {
         currentQuestionIndex_ = index;
         emit currentQuestionIndexChanged();
         emit currentQuestionChanged();
+    }
+}
+
+void ManagementBackend::setCurrentMuted(const bool muted) {
+    if (muted != currentMuted_) {
+        currentMuted_ = muted;
+        audioOutput_->setMuted(muted);
+        emit currentMutedChanged();
     }
 }
 
@@ -71,10 +83,6 @@ void ManagementBackend::initialize() {
     correctCount_ = 0;
     incorrectCount_ = 0;
     this->startBackground();
-}
-
-void ManagementBackend::setBackgroundMuted(const bool muted) const {
-    audioOutput_->setMuted(muted);
 }
 
 void ManagementBackend::startBackground() const {

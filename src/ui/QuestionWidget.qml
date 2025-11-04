@@ -13,11 +13,11 @@ ColumnLayout{
 
     Text{
         id: questionTitle
-        Layout.topMargin: questionRoot.height * 0.01
-        Layout.leftMargin: questionRoot.width * 0.05
-        Layout.rightMargin: questionRoot.width * 0.05
+        Layout.topMargin: gamePageRoot.height * 0.01
+        Layout.leftMargin: gamePageRoot.width * 0.05
+        Layout.rightMargin: gamePageRoot.width * 0.05
 
-        text: title
+        text: `${backend.currentQuestionIndex + 1}. ${title}`
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         Layout.fillWidth: true

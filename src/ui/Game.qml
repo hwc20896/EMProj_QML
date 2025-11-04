@@ -13,7 +13,7 @@ Page{
     property int currentProgress: backend.progress
     property int totalCount: 4
 
-    property var currentQuestion: {}
+    property var currentQuestion: ({})
     property bool answerRevealed: false
     property string selectedOption: ""
     property string correctOption: ""
@@ -33,6 +33,10 @@ Page{
 
             answerRevealed = true
             correctOption = correctAnswer
+            console.debug("gameMainLayout.width:", gameMainLayout.width)
+            console.debug("gameUpperLayout.width:", gameUpperLayout.width)
+            console.debug("questionWidget.width:", questionWidget.width)
+            console.debug("gameLowerLayout.width:", gameLowerLayout.width)
         }
     }
 
@@ -42,7 +46,12 @@ Page{
         anchors.fill: parent
     }
 
-    Component.onCompleted: backend.loadQuestions(currentGamemode, 4)
+    Component.onCompleted: {
+        backend.loadQuestions(currentGamemode, 4)
+        console.debug("gameUpperLayout.width:", gameUpperLayout.width)
+        console.debug("questionWidget.width:", questionWidget.width)
+        console.debug("gameLowerLayout.width:", gameLowerLayout.width)
+    }
 
     ColumnLayout{
         id: gameMainLayout
@@ -51,8 +60,8 @@ Page{
 
         RowLayout{
             id: gameUpperLayout
+            Layout.fillWidth: true
             spacing: 70
-            width: gamePageRoot.width
             Layout.topMargin: 10
             Layout.alignment: Qt.AlignTop
 
@@ -86,8 +95,8 @@ Page{
         RowLayout{
             id: gameLowerLayout
             Layout.bottomMargin: 20
-            width: gameMainLayout.width
             Layout.alignment: Qt.AlignBottom
+            Layout.fillWidth: true
 
             Button{
                 id: prevButton
@@ -97,6 +106,7 @@ Page{
                 text: "← 上一題"
                 font.pointSize: 15
                 enabled: backend.currentQuestionIndex > 0
+                visible: backend.currentQuestionIndex > 0
                 onClicked: backend.currentQuestionIndex -= 1;
             }
 

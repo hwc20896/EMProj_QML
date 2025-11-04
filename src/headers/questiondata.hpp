@@ -1,34 +1,44 @@
 #pragma once
-#ifndef QUESTIONDATA_HPP
-#define QUESTIONDATA_HPP
 
 #include <QJsonValue>
+#include <utility>
 
 class QuestionData {
+    using string = QString;
     Q_GADGET
     Q_PROPERTY(int id MEMBER id_)
     Q_PROPERTY(QString questionTitle MEMBER questionTitle_)
     Q_PROPERTY(QStringList options MEMBER options_)
-    Q_PROPERTY(int correctOption MEMBER correctOption_)
-    Q_PROPERTY(int questionType MEMBER questionType_)
-    Q_PROPERTY(int optionType MEMBER optionType_)
-public:
-    int id_;
-    QString questionTitle_;
-    QStringList options_;
-    int correctOption_;
-    int questionType_; // 0 憲法, 1 基本法
-    int optionType_;   // 0 單選, 1 是非
-    explicit QuestionData(const int id, QString questionTitle, QStringList options, const int correctOption, const int questionType = 0, const int optionType = 0)
-        : id_(id), questionTitle_(std::move(questionTitle)), options_(std::move(options)), correctOption_(correctOption), questionType_(questionType), optionType_(optionType) {}
-    explicit QuestionData(const int id, const QString& questionTitle, const QString& optionText, const int correctOption, const int questionType = 0, const int optionType = 0)
-        : QuestionData(id, questionTitle, QJsonValue::fromJson(optionText.toUtf8()).toVariant().toStringList(), correctOption, questionType, optionType) {}
+    Q_PROPERTY(QString correctText MEMBER correctText_)
+    Q_PROPERTY(bool sessionAnswered MEMBER sessionAnswered_)
+    Q_PROPERTY(QString sessionSelectedAnswer MEMBER sessionSelectedAnswer_)
+    public:
+        //  Basic
+        int id_ = 0;
+        string questionTitle_;
+        QStringList options_;
+        string correctText_;
 
-    [[nodiscard]] std::string getInfo() const {  //  Debug
-        return std::format("ID: {:02}, Question Type: {}, Option Type: {}", id_, questionType_, optionType_);
-    }
+        //  Info, useful only on debugging
+        string questionType_;
+        string optionType_;
+
+        //  Status
+        bool sessionAnswered_ = false;
+        string sessionSelectedAnswer_ = "";
+
+        explicit QuestionData(const int id,
+                              string title,
+                              const QString& optionsJson,
+                              const int64_t correct,
+                              string questionType,
+                              string optionType
+        ) : id_(id),
+            questionTitle_(std::move(title)),
+            options_(QJsonValue::fromJson(optionsJson.toLocal8Bit()).toVariant().toStringList()),
+            questionType_(std::move(questionType)),
+            optionType_(std::move(optionType))
+        {
+            correctText_ = options_.at(correct);
+        }
 };
-
-Q_DECLARE_METATYPE(QuestionData)
-
-#endif

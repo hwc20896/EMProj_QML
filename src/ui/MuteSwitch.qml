@@ -6,7 +6,6 @@ Button{
     implicitHeight: 70
     implicitWidth: 70
 
-    property bool isMuted: false
     property size iconSize: Qt.size(70,70)
 
     readonly property string mutedIcon: "qrc:/images/drawables/mute.png"
@@ -14,13 +13,13 @@ Button{
 
     flat: true
     icon{
-        source: isMuted? mutedIcon: unmutedIcon
+        source: backend.isMuted? mutedIcon: unmutedIcon
         width: iconSize.width
         height: iconSize.height
         color: "transparent"
     }
     onClicked: {
-        isMuted = !isMuted;
+        backend.isMuted = !backend.isMuted;
     }
 
     background: Rectangle{

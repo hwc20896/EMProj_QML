@@ -5,10 +5,10 @@ import QtQuick.Layouts
 
 ApplicationWindow{
     id: root
-    minimumWidth: 1000
-    minimumHeight: 700
+    minimumWidth: 1100
+    minimumHeight: 750
 
-    property var currentGamemode: 0
+    property int currentGamemode: 0
 
     StackView{
         id: stackView
