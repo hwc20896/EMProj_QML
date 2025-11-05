@@ -45,6 +45,7 @@ ColumnLayout{
 
                 onClicked:{
                     selectedOption = text
+                    backend.currentQuestion.sessionSelectedAnswer = text
                     backend.handleAnswer(text, currentQuestion.id);
                 }
 
@@ -67,10 +68,6 @@ ColumnLayout{
                             return "#F44336"  // 用户选择的错误答案红色
                         }
                         return "#F5F5F5" // 未选中的选项
-                    }
-
-                    Behavior on color {
-                        ColorAnimation { duration: 300 }
                     }
 
                     Rectangle {

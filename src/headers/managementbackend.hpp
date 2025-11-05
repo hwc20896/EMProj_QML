@@ -1,11 +1,11 @@
 #pragma once
 
-#include <QObject>
 #include <QSoundEffect>
 #include <QMediaPlayer>
 #include <QAudioOutput>
 #include <memory>
 #include "database.hpp"
+#include <chrono>
 
 class ManagementBackend final : public QObject {
     Q_OBJECT
@@ -35,18 +35,24 @@ class ManagementBackend final : public QObject {
         void progressChanged();
         void currentQuestionIndexChanged();
         void currentMutedChanged();
-        void answerResult(bool isCorrect, const QString& correctAnswer, int id);
+
+        void currentAnsweredChanged();
 
     //  Class methods
     public:
         explicit ManagementBackend(QObject* parent = nullptr);
         ~ManagementBackend() override;
         Q_INVOKABLE void initialize();
+        Q_INVOKABLE void finalize() const;
+        Q_INVOKABLE void startTimer();
+        void endTimer();
     private:
         int correctCount_, incorrectCount_;
         std::unique_ptr<QSoundEffect> correctSound_, incorrectSound_;
         std::unique_ptr<QMediaPlayer> player_;
         std::unique_ptr<QAudioOutput> audioOutput_;
+
+        std::chrono::steady_clock::time_point questionStartTime_, questionEndTime_;
 
         int currentQuestionIndex_ = -1;
         int progress_ = 0;

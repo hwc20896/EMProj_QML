@@ -23,20 +23,16 @@ Page{
 
         function onCurrentQuestionChanged(){
             currentQuestion = backend.currentQuestion;
-            answerRevealed = false;
-            selectedOption = "";
-            correctOption = "";
+            selectedOption = backend.currentQuestion.sessionSelectedAnswer || "";
+            correctOption = backend.currentQuestion.correctText || "";
+            answerRevealed = backend.currentQuestion.sessionAnswered;
         }
 
-        function onAnswerResult(isCorrect, correctAnswer, questionId) {
-            if (questionId !== currentQuestion.id) return
-
-            answerRevealed = true
-            correctOption = correctAnswer
-            console.debug("gameMainLayout.width:", gameMainLayout.width)
-            console.debug("gameUpperLayout.width:", gameUpperLayout.width)
-            console.debug("questionWidget.width:", questionWidget.width)
-            console.debug("gameLowerLayout.width:", gameLowerLayout.width)
+        function onCurrentAnsweredChanged(){
+            answerRevealed = backend.currentQuestion.sessionAnswered;
+            console.debug(answerRevealed)
+            console.debug("Selected option: " + selectedOption)
+            console.debug("Correct option: " + correctOption)
         }
     }
 
@@ -47,10 +43,8 @@ Page{
     }
 
     Component.onCompleted: {
-        backend.loadQuestions(currentGamemode, 4)
-        console.debug("gameUpperLayout.width:", gameUpperLayout.width)
-        console.debug("questionWidget.width:", questionWidget.width)
-        console.debug("gameLowerLayout.width:", gameLowerLayout.width)
+        backend.loadQuestions(currentGamemode, totalCount);
+        backend.startTimer();
     }
 
     ColumnLayout{
@@ -117,13 +111,16 @@ Page{
                 Layout.preferredWidth: 160
                 Layout.preferredHeight: 60
                 Layout.rightMargin: 50
-                text: "下一題 →"
+                text: backend.currentQuestionIndex < totalCount - 1? "下一題 →": "完成"
                 font.pointSize: 15
+                enabled: answerRevealed
                 onClicked: {
-                    if (backend.currentQuestionIndex < 3) {
+                    if (backend.currentQuestionIndex < totalCount - 1) {
+                        backend.startTimer();
                         backend.currentQuestionIndex += 1;
                     } else {
                         console.log("Last page reached.")
+                        backend.finalize();
                     }
                 }
             }

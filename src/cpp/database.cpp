@@ -5,107 +5,104 @@
 #include <iostream>
 #include <format>
 
-using namespace EMProj_CMake_Backend;
+namespace EMProj_QML_Backend {
+    Database::Database() {
+        if (duckdb_open(nullptr, &question_db_) != DuckDBSuccess)
+            throw std::runtime_error("Failed to open DuckDB in-memory database.");
+        if (duckdb_connect(question_db_, &question_conn_) != DuckDBSuccess)
+            throw std::runtime_error("Failed to connect to DuckDB in-memory database.");
+        if (duckdb_query(question_conn_, "install excel; load excel;", nullptr) != DuckDBSuccess)
+            throw std::runtime_error("Unable to load Excel extension.");
 
-Database::Database() {
-    // 建立 in-memory DuckDB
-    if (duckdb_open(nullptr, &db_) != DuckDBSuccess)
-        throw std::runtime_error("Failed to open DuckDB in-memory database.");
-    if (duckdb_connect(db_, &conn_) != DuckDBSuccess)
-        throw std::runtime_error("Failed to connect to DuckDB in-memory database.");
+        const auto query = std::format(
+            "CREATE TABLE questions AS SELECT * FROM read_xlsx({}, header=true);",
+            EXCEL_FILE
+        );
 
-    if (duckdb_query(conn_, "install excel; load excel;", nullptr) != DuckDBSuccess) {
-        throw std::runtime_error("Unable to load Excel extension.");
+        duckdb_result result;
+        if (duckdb_query(question_conn_, query.c_str(), &result) != DuckDBSuccess)
+            throw std::runtime_error("Failed to create questions table from Excel file.");
+        duckdb_destroy_result(&result);
+        std::cout << "[DuckDB] Loaded Excel file into in-memory table successfully.\n";
+
+        //  Podium
+        if (duckdb_open(PODIUM_DB_FILE, &podium_db_) != DuckDBSuccess)
+            throw std::runtime_error("Failed to open Podium DuckDB database.");
+        if (duckdb_connect(podium_db_, &podium_conn_) != DuckDBSuccess)
+            throw std::runtime_error("Failed to connect to Podium DuckDB database.");
+
+        if (const auto podium_query = "create table if not exists PodiumData(UUID VARCHAR PRIMARY KEY, TimeElapsed INT);";
+            duckdb_query(podium_conn_, podium_query, nullptr) != DuckDBSuccess)
+            throw std::runtime_error("Failed to create podium_data table.");
     }
 
-    // 把 Excel 讀進暫存表 QuestionData
-    const std::string createTableSQL = std::format(
-        "CREATE TABLE QuestionData AS "
-        "SELECT * FROM read_xlsx('{}', header = true);",
-        EXCEL_FILE
-    );
+    Database::~Database() {
+        if (question_conn_) duckdb_disconnect(&question_conn_);
+        if (question_db_) duckdb_close(&question_db_);
 
-    duckdb_result res;
-    if (duckdb_query(conn_, createTableSQL.c_str(), &res) != DuckDBSuccess) {
-        const char* msg = duckdb_result_error(&res);
-        const std::string err = msg ? msg : "Unknown error loading Excel file.";
-        throw std::runtime_error("Failed to load Excel: \n" + err);
+        if (podium_conn_) duckdb_disconnect(&podium_conn_);
+        if (podium_db_) duckdb_close(&podium_db_);
     }
-    duckdb_destroy_result(&res);
 
-    std::cout << "[DuckDB] Loaded Excel file into in-memory table successfully.\n";
-}
+    QList<QuestionData> Database::getQuestions(int quantity) const {
+        QList<QuestionData> questions;
+        duckdb_result result;
 
-Database::~Database() {
-    if (conn_) duckdb_disconnect(&conn_);
-    if (db_) duckdb_close(&db_);
-}
+        const auto query = std::format(
+            "SELECT ID, QuestionTitle, Options, CorrectOption, QuestionType, OptionType FROM questions ORDER BY RANDOM() LIMIT {};",
+            quantity
+        );
 
-//  It seems this method is useless.
-void Database::testDatabase() const {
-    duckdb_result result;
-    if (duckdb_query(conn_, "SELECT COUNT(*) FROM QuestionData;", &result) == DuckDBSuccess) {
-        int count = duckdb_value_int32(&result, 0, 0);
-        std::cout << std::format("Question count: {}\n", count);
-    }
-    duckdb_destroy_result(&result);
-}
+        if (duckdb_query(question_conn_, query.c_str(), &result) != DuckDBSuccess)
+            throw std::runtime_error("Failed to retrieve questions from database.");
 
-int Database::getQuestionCount(const int gamemode) const {
-    std::string queryStr = "SELECT COUNT(*) FROM QuestionData";
-    if (gamemode == 1) queryStr += " WHERE QuestionType = 0";
-    else if (gamemode == 2) queryStr += " WHERE QuestionType = 1";
+        const idx_t row_count = duckdb_row_count(&result);
+        for (idx_t i = 0; i < row_count; ++i) {
+            const auto id = duckdb_value_int32(&result, 0, i);
+            const auto questionTitle = QString::fromStdString(
+                duckdb_value_varchar(&result, 1, i)
+            );
+            const auto optionsJson = QString::fromStdString(
+                duckdb_value_varchar(&result, 2, i)
+            );
+            const auto correct = duckdb_value_int64(&result, 3, i);
 
-    duckdb_result result;
-    int count = 0;
-    if (duckdb_query(conn_, queryStr.c_str(), &result) == DuckDBSuccess)
-        count = duckdb_value_int32(&result, 0, 0);
-    duckdb_destroy_result(&result);
-    return count;
-}
+            const auto questionType = QString::fromStdString(
+                duckdb_value_varchar(&result, 4, i)
+            );
+            const auto optionType = QString::fromStdString(
+                duckdb_value_varchar(&result, 5, i)
+            );
 
-QList<int> Database::getQuestionCount() const {
-    QList<int> resultVec;
-    duckdb_result result;
-    if (duckdb_query(conn_,
-                     "SELECT QuestionType, COUNT(ID) FROM QuestionData GROUP BY QuestionType;",
-                     &result) == DuckDBSuccess) {
-        const idx_t rows = duckdb_row_count(&result);
-        for (idx_t i = 0; i < rows; i++) resultVec.push_back(duckdb_value_int32(&result, 1, i));
-    }
-    duckdb_destroy_result(&result);
-    return resultVec;
-}
+            questions.emplace_back(
+                id,
+                questionTitle,
+                optionsJson,
+                correct,
+                questionType,
+                optionType
+            );
+        }
 
-QList<QuestionData> Database::getQuestions(const int gamemode, const int count) const {
-    QList<QuestionData> questions;
-
-    std::string queryStr = "SELECT * FROM QuestionData";
-    if (gamemode == 1) queryStr += " WHERE QuestionType = 0";
-    else if (gamemode == 2) queryStr += " WHERE QuestionType = 1";
-    queryStr += std::format(" ORDER BY RANDOM() LIMIT {};", count);
-
-    duckdb_result result;
-    if (duckdb_query(conn_, queryStr.c_str(), &result) != DuckDBSuccess)
+        duckdb_destroy_result(&result);
         return questions;
-
-    const idx_t rows = duckdb_row_count(&result);
-    for (idx_t i = 0; i < rows; i++) {
-        const int id             = duckdb_value_int32(&result, 0, i);
-
-        const auto title_c      = duckdb_value_varchar_internal(&result, 1, i);
-        const QString title      = QString::fromUtf8(title_c ? title_c : "");
-
-        const auto options_c    = duckdb_value_varchar_internal(&result, 2, i);
-        const QString optionsStr = QString::fromUtf8(options_c ? options_c : "");
-
-        const int correctOption  = duckdb_value_int32(&result, 3, i);
-        const int questionType   = duckdb_value_int32(&result, 4, i);
-        const int optionType     = duckdb_value_int32(&result, 5, i);
-
-        questions.emplace_back(id, title, optionsStr,
-                               correctOption, questionType, optionType);
     }
-    duckdb_destroy_result(&result);
-    return questions;
+
+    void Database::savePodiumData(const QString& uuid, const int timeElapsed) const {
+        if (uuid.isEmpty() || timeElapsed < 0) {
+            throw std::invalid_argument("Invalid UUID or TimeElapsed value.");
+        }
+
+        const auto query = std::format(
+            "INSERT INTO PodiumData (UUID, TimeElapsed) VALUES ('{}', {});",
+            uuid.toStdString(),
+            timeElapsed
+        );
+
+        if (duckdb_query(podium_conn_, query.c_str(), nullptr) != DuckDBSuccess) {
+            throw std::runtime_error("Failed to insert podium data into database.");
+        }
+    }
+
+
 }

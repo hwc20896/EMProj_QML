@@ -1,5 +1,7 @@
 #include "managementbackend.hpp"
-using EMProj_CMake_Backend::Database;
+using EMProj_QML_Backend::Database;
+#include <iostream>
+#include <QUuid>
 
 //  Qt Properties
 int ManagementBackend::correctCount() const {
@@ -98,11 +100,11 @@ void ManagementBackend::stopBackground() const {
 }
 
 //  Database
-void ManagementBackend::loadQuestions(int gamemode, int quantity) {
+void ManagementBackend::loadQuestions(int, const int quantity) {
     questionList_.clear();
     currentQuestionIndex_ = 0;
 
-    questionList_ = Database::instance().getQuestions(gamemode, quantity);
+    questionList_ = Database::instance().getQuestions(quantity);
     emit currentQuestionChanged();
 }
 
@@ -117,22 +119,62 @@ void ManagementBackend::clearQuestions() {
 }
 
 void ManagementBackend::handleAnswer(const QString& answer, const int id) {
-    const auto current = questionList_.at(currentQuestionIndex_);
-    const auto correctText = current.options_.at(current.correctOption_);
-    const bool isCorrect = answer == correctText && id == current.id_;
-    if (isCorrect) {
+    if (currentQuestionIndex_ < 0 || currentQuestionIndex_ >= questionList_.size()) return;
+
+    auto& question = questionList_[currentQuestionIndex_];
+    if (question.sessionAnswered_) return;
+
+    question.sessionAnswered_ = true;
+    emit currentAnsweredChanged();
+    this->endTimer();
+
+    question.sessionSelectedAnswer_ = answer;
+
+    if (answer == question.correctText_) {
         correctCount_++;
-        this->playCorrect();
         emit correctCountChanged();
+        this->playCorrect();
     } else {
         incorrectCount_++;
-        this->playIncorrect();
         emit incorrectCountChanged();
+        this->playIncorrect();
     }
-    progress_ = correctCount_ + incorrectCount_;
+
+    //  Update progress
+    progress_++;
     emit progressChanged();
-    emit answerResult(isCorrect, correctText, current.id_);
 }
 
+void ManagementBackend::finalize() const {
+    this->stopBackground();
 
+    const auto correct = std::ranges::count_if(questionList_, [](const QuestionData& i){return i.correctText_ == i.sessionSelectedAnswer_;});
+    std::cout << "Correct answers: " << correct << " out of " << questionList_.size() << '\n';
 
+    const bool ok = std::ranges::all_of(questionList_, [](const QuestionData& i){return i.correctText_ == i.sessionSelectedAnswer_;});
+    std::cout << "Can be inserted to podium: " << std::boolalpha << ok << '\n';
+
+    const int64_t totalTime = std::accumulate(questionList_.begin(), questionList_.end(), 0LL,
+        [](const int64_t acc, const QuestionData& q){ return acc + q.sessionTimeSpentMs_; });
+    std::cout << "Total time spent (ms): " << totalTime << '\n';
+
+    if (ok) {
+        const auto uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        constexpr auto timeElapsed = 8000; //  Placeholder time elapsed
+        Database::instance().savePodiumData(uuid, timeElapsed);
+    }
+}
+
+void ManagementBackend::startTimer() {
+    questionStartTime_ = std::chrono::steady_clock::now();
+}
+
+void ManagementBackend::endTimer() {
+    questionEndTime_ = std::chrono::steady_clock::now();
+    const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(questionEndTime_ - questionStartTime_).count();
+
+    if (currentQuestionIndex_ >= 0 && currentQuestionIndex_ < questionList_.size()) {
+        questionList_[currentQuestionIndex_].sessionTimeSpentMs_ = duration;
+        std::cout << "Question ID " << questionList_[currentQuestionIndex_].id_ << " answered in " << duration << " ms.\n";
+    }
+}

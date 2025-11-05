@@ -5,7 +5,7 @@
 #include "duckdb.h"
 
 
-namespace EMProj_CMake_Backend {
+namespace EMProj_QML_Backend {
     class Database final {
         public:
             static Database& instance() {
@@ -18,26 +18,25 @@ namespace EMProj_CMake_Backend {
 
             Database& operator=(const Database&) = delete;
             Database& operator=(Database&&) = delete;
-
-            void testDatabase() const;
-
-            [[nodiscard]]
-            int getQuestionCount(int gamemode) const;
-
-            [[nodiscard]]
-            QList<int> getQuestionCount() const;
-
-            [[nodiscard]]
-            QList<QuestionData> getQuestions(int gamemode, int count) const;
         private:
-            // DuckDB C API handles
-            duckdb_database db_ = nullptr;
-            duckdb_connection conn_ = nullptr;
-
             explicit Database();
             ~Database();
 
+        //  QuestionData
+        public:
+            [[nodiscard]] QList<QuestionData> getQuestions(int quantity) const;
+        private:
+            duckdb_database question_db_ = nullptr;
+            duckdb_connection question_conn_ = nullptr;
             static constexpr auto EXCEL_FILE = "question_data.xlsx";
+
+        //  Podium Data
+        public:
+            /*  Saves the podium data with the given UUID and time elapsed in milliseconds. */
+            void savePodiumData(const QString& uuid, int timeElapsed) const;
+            duckdb_database podium_db_ = nullptr;
+            duckdb_connection podium_conn_ = nullptr;
+            static constexpr auto PODIUM_DB_FILE = "podium_data.db";
     };
 
 }

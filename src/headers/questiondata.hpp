@@ -2,6 +2,7 @@
 
 #include <QJsonValue>
 #include <utility>
+#include <random>
 
 class QuestionData {
     using string = QString;
@@ -26,6 +27,7 @@ class QuestionData {
         //  Status
         bool sessionAnswered_ = false;
         string sessionSelectedAnswer_ = "";
+        int64_t sessionTimeSpentMs_ = 0LL;
 
         explicit QuestionData(const int id,
                               string title,
@@ -35,10 +37,15 @@ class QuestionData {
                               string optionType
         ) : id_(id),
             questionTitle_(std::move(title)),
-            options_(QJsonValue::fromJson(optionsJson.toLocal8Bit()).toVariant().toStringList()),
+            options_(QJsonValue::fromJson(optionsJson.toUtf8()).toVariant().toStringList()),
             questionType_(std::move(questionType)),
             optionType_(std::move(optionType))
         {
             correctText_ = options_.at(correct);
+
+            static std::random_device rd;
+            static std::mt19937 g(rd());
+            if (options_.size() == 2) return;
+            std::ranges::shuffle(options_, g);
         }
 };

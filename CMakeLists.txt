@@ -10,9 +10,7 @@ set(FILES
     resources.qrc
     src/headers/managementbackend.hpp
     src/cpp/managementbackend.cpp
-    src/headers/templateelement.hpp
-    src/cpp/templateelement.cpp
-    src/headers/questiondata.hpp
+        src/headers/questiondata.hpp
     src/cpp/database.cpp
     src/headers/database.hpp
 )
