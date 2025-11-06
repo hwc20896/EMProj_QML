@@ -10,33 +10,24 @@ ApplicationWindow{
 
     property int currentGamemode: 0
 
+    readonly property Component introPageComponent: Qt.createComponent("Intro.qml")
+    readonly property Component gamePageComponent: Qt.createComponent("Game.qml")
+    readonly property Component outroPageComponent: Qt.createComponent("Outro.qml")
+
     StackView{
         id: stackView
         anchors.fill: parent
-        initialItem: introPageComponent
+        initialItem: introPageComponent.createObject()
 
         pushEnter: Transition { XAnimator { duration: 30 } }
         pushExit: Transition { XAnimator { duration: 30 } }
     }
 
-    Component{
-        id: introPageComponent
-        Intro{
-            onStartMain: gamemode => {
-                console.log("The game should be started now.");
-                currentGamemode = gamemode;
-                stackView.push(gamePageComponent);
-            }
-        }
+    function getGame(){
+        return gamePageComponent.createObject(stackView)
     }
 
-    Component{
-        id: gamePageComponent
-        Game{}
+    function getOutro(){
+        return outroPageComponent.createObject(stackView)
     }
-    /*
-    Component{
-        id: outroPageComponent
-    }
-    */
 }

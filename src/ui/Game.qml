@@ -18,6 +18,8 @@ Page{
     property string selectedOption: ""
     property string correctOption: ""
 
+    signal gameFinished()
+
     Connections{
         target: backend
 
@@ -45,6 +47,10 @@ Page{
     Component.onCompleted: {
         backend.loadQuestions(currentGamemode, totalCount);
         backend.startTimer();
+    }
+
+    Component.onDestruction: {
+        backend.releaseQuestions();
     }
 
     ColumnLayout{
@@ -121,6 +127,7 @@ Page{
                     } else {
                         console.log("Last page reached.")
                         backend.finalize();
+                        stackView.replace(getOutro())
                     }
                 }
             }

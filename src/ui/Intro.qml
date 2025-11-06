@@ -8,8 +8,6 @@ Page{
     height: 700
     anchors.fill: parent
 
-    signal startMain(int gamemode)
-
     StackLayout{
         id: rootLayout
         anchors.fill: parent
@@ -81,7 +79,8 @@ Page{
                         font.pointSize: 20
                         onClicked: {
                             backend.initialize();
-                            introRoot.startMain(gamemodeChooser.currentIndex);
+                            currentGamemode = gamemodeChooser.currentIndex;
+                            stackView.push(getGame());
                         }
                     }
                 }

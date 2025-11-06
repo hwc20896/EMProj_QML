@@ -5,6 +5,7 @@
         <file>src/ui/MuteSwitch.qml</file>
         <file>src/ui/Game.qml</file>
         <file>src/ui/QuestionWidget.qml</file>
+        <file>src/ui/Outro.qml</file>
     </qresource>
     <qresource prefix="/images">
         <file>drawables/firstpagebg.png</file>
