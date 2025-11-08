@@ -21,6 +21,8 @@ ApplicationWindow{
 
         pushEnter: Transition { XAnimator { duration: 30 } }
         pushExit: Transition { XAnimator { duration: 30 } }
+        replaceEnter: Transition { XAnimator { duration: 30 } }
+        replaceExit: Transition { XAnimator { duration: 30 } }
     }
 
     function getGame(){
