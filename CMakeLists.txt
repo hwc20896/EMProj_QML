@@ -3,14 +3,14 @@ project(EMProj_QML)
 
 set(CMAKE_CXX_STANDARD 23)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick Multimedia Concurrent)
 
 set(FILES
     main.cpp
     resources.qrc
     src/headers/managementbackend.hpp
     src/cpp/managementbackend.cpp
-        src/headers/questiondata.hpp
+    src/headers/questiondata.hpp
     src/cpp/database.cpp
     src/headers/database.hpp
 )
@@ -37,5 +37,6 @@ target_link_libraries(
         Qt6::Qml
         Qt6::Quick
         Qt6::Multimedia
+        Qt6::Concurrent
         ${CMAKE_BINARY_DIR}/duckdb.lib
 )

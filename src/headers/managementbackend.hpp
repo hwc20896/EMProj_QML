@@ -28,6 +28,8 @@ class ManagementBackend final : public QObject {
         void setCurrentQuestionIndex(int index);
         void setCurrentMuted(bool muted);
 
+        void onQuestionDataReady(const QList<QuestionData>& q);
+
     signals:
         void correctCountChanged();
         void incorrectCountChanged();

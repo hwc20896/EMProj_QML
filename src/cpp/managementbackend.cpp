@@ -104,9 +104,16 @@ void ManagementBackend::loadQuestions(int, const int quantity) {
     questionList_.clear();
     currentQuestionIndex_ = 0;
 
-    questionList_ = Database::instance().getQuestions(quantity);
+    connect(&Database::instance(), &Database::questionDataReady, this, &ManagementBackend::onQuestionDataReady, Qt::UniqueConnection);
+
+    Database::instance().getQuestionData(quantity);
+}
+
+void ManagementBackend::onQuestionDataReady(const QList<QuestionData>& q) {
+    questionList_ = q;
     emit currentQuestionChanged();
 }
+
 
 void ManagementBackend::releaseQuestions() {
     this->clearQuestions();

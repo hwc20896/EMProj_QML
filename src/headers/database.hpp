@@ -3,10 +3,11 @@
 #include <vector>
 #include "questiondata.hpp"
 #include "duckdb.h"
-
+#include <future>
 
 namespace EMProj_QML_Backend {
-    class Database final {
+    class Database final : public QObject {
+        Q_OBJECT
         public:
             static Database& instance() {
                 static Database instance;
@@ -20,12 +21,19 @@ namespace EMProj_QML_Backend {
             Database& operator=(Database&&) = delete;
         private:
             explicit Database();
-            ~Database();
+            ~Database() override;
 
         //  QuestionData
         public:
-            [[nodiscard]] QList<QuestionData> getQuestions(int quantity) const;
+            void getQuestionData(int count);
+
+        signals:
+            void questionDataReady(const QList<QuestionData>& data);
+            void questionDataError(const QString& error);
+
         private:
+            [[nodiscard]] QList<QuestionData> getQuestionData_IMPL(int count) const;
+            [[nodiscard]] static QString safeQString(const char* str);
             duckdb_database question_db_ = nullptr;
             duckdb_connection question_conn_ = nullptr;
             static constexpr auto EXCEL_FILE = "question_data.xlsx";
