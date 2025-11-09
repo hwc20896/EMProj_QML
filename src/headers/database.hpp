@@ -1,9 +1,11 @@
 #pragma once
 
-#include <vector>
-#include "questiondata.hpp"
-#include "duckdb.h"
+#include <atomic>
 #include <future>
+#include <memory>
+#include <QFutureWatcher>
+#include "duckdb.h"
+#include "questiondata.hpp"
 
 namespace EMProj_QML_Backend {
     class Database final : public QObject {
@@ -22,6 +24,18 @@ namespace EMProj_QML_Backend {
         private:
             explicit Database();
             ~Database() override;
+            [[nodiscard]] static QString safeQString(const char* str);
+
+        //  Initialization
+            void initializeDatabase();
+
+        signals:
+            void initializationComplete();
+            void initializationError(const QString& error);
+
+        private:
+            std::atomic_bool isInitialized_{false};
+            std::unique_ptr<QFutureWatcher<void>> watcher_;
 
         //  QuestionData
         public:
@@ -33,7 +47,6 @@ namespace EMProj_QML_Backend {
 
         private:
             [[nodiscard]] QList<QuestionData> getQuestionData_IMPL(int count) const;
-            [[nodiscard]] static QString safeQString(const char* str);
             duckdb_database question_db_ = nullptr;
             duckdb_connection question_conn_ = nullptr;
             static constexpr auto EXCEL_FILE = "question_data.xlsx";
@@ -48,5 +61,4 @@ namespace EMProj_QML_Backend {
             duckdb_connection podium_conn_ = nullptr;
             static constexpr auto PODIUM_DB_FILE = "podium_data.db";
     };
-
 }

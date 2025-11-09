@@ -1,15 +1,33 @@
 #include "database.hpp"
-#include <QString>
-#include <QJsonValue>
-#include <QtConcurrentRun>
-#include <QFutureWatcher>
+
 #include <QFuture>
+#include <QtConcurrentRun>
 #include <iostream>
-#include <format>
 
 namespace EMProj_QML_Backend {
     Database::Database() {
-        do {
+        watcher_ = std::make_unique<QFutureWatcher<void>>(this);
+        connect(watcher_.get(), &QFutureWatcher<void>::finished, this, &Database::initializationComplete);
+
+        const QFuture<void> future = QtConcurrent::run([this] {
+            this->initializeDatabase();
+        });
+        watcher_->setFuture(future);
+    }
+
+    Database::~Database() {
+        if (watcher_ && watcher_->isRunning()) watcher_->waitForFinished();
+
+        if (question_conn_) duckdb_disconnect(&question_conn_);
+        if (question_db_) duckdb_close(&question_db_);
+
+        if (podium_conn_) duckdb_disconnect(&podium_conn_);
+        if (podium_db_) duckdb_close(&podium_db_);
+    }
+
+    void Database::initializeDatabase() {
+        try {
+            //  Question Database
             if (duckdb_open(nullptr, &question_db_) != DuckDBSuccess)
                 throw std::runtime_error("Failed to open DuckDB in-memory database.");
             if (duckdb_connect(question_db_, &question_conn_) != DuckDBSuccess)
@@ -27,10 +45,8 @@ namespace EMProj_QML_Backend {
                 throw std::runtime_error("Failed to create questions table from Excel file:");
             duckdb_destroy_result(&result);
             std::cout << "[DuckDB] Loaded Excel file into in-memory table successfully.\n";
-        } while (false);
 
-        do {
-            //  Podium
+            // Podium database
             if (duckdb_open(PODIUM_DB_FILE, &podium_db_) != DuckDBSuccess)
                 throw std::runtime_error("Failed to open Podium DuckDB database.");
             if (duckdb_connect(podium_db_, &podium_conn_) != DuckDBSuccess)
@@ -39,15 +55,16 @@ namespace EMProj_QML_Backend {
             if (const auto podium_query = "create table if not exists PodiumData(uuid VARCHAR PRIMARY KEY, timeElapsed INTEGER, stamp TIMESTAMP_S default (CURRENT_TIMESTAMP::TIMESTAMP));";
                 duckdb_query(podium_conn_, podium_query, nullptr) != DuckDBSuccess)
                 throw std::runtime_error("Failed to create podium_data table.");
-        } while (false);
-    }
 
-    Database::~Database() {
-        if (question_conn_) duckdb_disconnect(&question_conn_);
-        if (question_db_) duckdb_close(&question_db_);
-
-        if (podium_conn_) duckdb_disconnect(&podium_conn_);
-        if (podium_db_) duckdb_close(&podium_db_);
+            isInitialized_.store(true, std::memory_order_release);
+            std::cout << "[DuckDB] Database initialization completed successfully.\n";
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Database initialization error: " << e.what() << std::endl;
+            QMetaObject::invokeMethod(this, [this, e]() {
+                emit initializationError(QString::fromUtf8(e.what()));
+            }, Qt::QueuedConnection);
+        }
     }
 
     QString Database::safeQString(const char* str) {
@@ -55,30 +72,39 @@ namespace EMProj_QML_Backend {
     }
 
     void Database::getQuestionData(const int count){
+        if (!isInitialized_.load(std::memory_order_acquire)) {
+            emit questionDataError("Database is not initialized yet.");
+            return;
+        }
+
         const auto future = QtConcurrent::run([this, count] {
             return this->getQuestionData_IMPL(count);
         });
 
-        auto watcher = new QFutureWatcher<QList<QuestionData>>(this);
-        connect(watcher, &QFutureWatcherBase::finished, this, [this, watcher] {
+        auto watcher = std::make_unique<QFutureWatcher<QList<QuestionData>>>(this);
+        const auto rawWatcher = watcher.get();
+
+        connect(rawWatcher, &QFutureWatcherBase::finished, this, [this, watcher = std::move(watcher)] mutable {
             try {
                 const auto& result = watcher->result<>();
                 emit questionDataReady(result);
             }
             catch (const std::exception& e) {
-                std::cout << "Nah i'm not going to be done.\n";
+                std::cout << "Error fetching question data.\n";
                 std::cout << e.what();
                 emit questionDataError(QString::fromUtf8(e.what()));
             }
-
-            watcher->deleteLater();
         });
 
-        watcher->setFuture(future);
+        rawWatcher->setFuture(future);
     }
 
     QList<QuestionData> Database::getQuestionData_IMPL(const int count) const {
-        std::cout << "Let me see see.\n";
+        if (!isInitialized_.load(std::memory_order_acquire)) {
+            throw std::runtime_error("Database is not initialized yet.");
+        }
+
+        std::cout << "Fetching question data...\n";
         QList<QuestionData> questions;
         duckdb_result result;
         static constexpr auto query_template = R"(
@@ -119,11 +145,16 @@ namespace EMProj_QML_Backend {
         }
         duckdb_destroy_result(&result);
         duckdb_destroy_prepare(&stmt);
-        std::cout << "Yeah i'm done.\n";
+        std::cout << "Question data fetched successfully.\n";
         return questions;
     }
 
     void Database::savePodiumData(const QString& uuid, const int timeElapsed) const {
+        if (!isInitialized_.load(std::memory_order_acquire)) {
+            std::cerr << "Database is not initialized yet. Cannot save podium data." << std::endl;
+            return;
+        }
+
         static constexpr auto insert_query = R"(
             INSERT INTO PodiumData (uuid, timeElapsed)
             VALUES (?, ?)
