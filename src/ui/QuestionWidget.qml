@@ -8,6 +8,7 @@ ColumnLayout{
     //  Examples
     property string title: "為什麽CJY這麽on9？"
     property var optionText: ["因為他on", "因為他有點on", "找ljq問去", "不L關我事"]
+    property string descriptionText: "俺覺得CJY和ljq撮合撮合非常合適。"
 
     spacing: 30
 
@@ -46,13 +47,16 @@ ColumnLayout{
                 onClicked:{
                     selectedOption = text
                     backend.currentQuestion.sessionSelectedAnswer = text
-                    backend.handleAnswer(text, currentQuestion.id);
+                    backend.handleAnswer(text);
                 }
 
                 background: Rectangle {
                     radius: 8
-                    border.width: 1
-                    border.color: "#9E9E9E"
+                    border.width: 2
+                    border.color: {
+                        if (!answerRevealed) return "#9E9E9E";
+                        return text === correctOption ? "#2E7D32" : "#B71C1C";
+                    }
 
                     // 核心：动态背景色
                     color: {
@@ -69,19 +73,23 @@ ColumnLayout{
                         }
                         return "#F5F5F5" // 未选中的选项
                     }
-
-                    Rectangle {
-                        anchors.fill: parent
-                        anchors.margins: -2
-                        radius: 10
-                        color: "transparent"
-                        border.color: text === correctOption ? "#2E7D32" : "#B71C1C"
-                        visible: answerRevealed
-                    }
                 }
 
                 implicitHeight: 60
             }
         }
+    }
+
+    Text{
+        id: description
+        Layout.alignment: Qt.AlignCenter
+
+        visible: descriptionText.length !== 0
+        text: {
+            if (answerRevealed && descriptionText.length !== 0) return `解析：${descriptionText}`;
+            return "";
+        }
+        font.pointSize: 20
+        color: "#0000ff"
     }
 }

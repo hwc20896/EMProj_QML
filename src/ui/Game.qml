@@ -11,7 +11,7 @@ Page{
     property int correctCount: backend.correctCount
     property int incorrectCount: backend.incorrectCount
     property int currentProgress: backend.progress
-    property int totalCount: 4
+    property int totalCount: 10
 
     property var currentQuestion: ({})
     property bool answerRevealed: false
@@ -45,12 +45,8 @@ Page{
     }
 
     Component.onCompleted: {
-        backend.loadQuestions(currentGamemode, totalCount);
+        backend.loadQuestions(totalCount);
         backend.startTimer();
-    }
-
-    Component.onDestruction: {
-        backend.releaseQuestions();
     }
 
     ColumnLayout{
@@ -90,6 +86,7 @@ Page{
             id: questionWidget
             title: currentQuestion.questionTitle? currentQuestion.questionTitle : "載入中...\n如果一直停留在這裏，請上報GitHub Issues。"
             optionText: currentQuestion.options || []
+            descriptionText: currentQuestion.description
         }
 
         RowLayout{

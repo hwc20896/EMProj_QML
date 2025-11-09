@@ -9,33 +9,37 @@
 
 namespace EMProj_QML_Backend {
     Database::Database() {
-        if (duckdb_open(nullptr, &question_db_) != DuckDBSuccess)
-            throw std::runtime_error("Failed to open DuckDB in-memory database.");
-        if (duckdb_connect(question_db_, &question_conn_) != DuckDBSuccess)
-            throw std::runtime_error("Failed to connect to DuckDB in-memory database.");
-        if (duckdb_query(question_conn_, "install excel; load excel;", nullptr) != DuckDBSuccess)
-            throw std::runtime_error("Unable to load Excel extension.");
+        do {
+            if (duckdb_open(nullptr, &question_db_) != DuckDBSuccess)
+                throw std::runtime_error("Failed to open DuckDB in-memory database.");
+            if (duckdb_connect(question_db_, &question_conn_) != DuckDBSuccess)
+                throw std::runtime_error("Failed to connect to DuckDB in-memory database.");
+            if (duckdb_query(question_conn_, "install excel; load excel;", nullptr) != DuckDBSuccess)
+                throw std::runtime_error("Unable to load Excel extension.");
 
-        const auto query = std::format(
-            "CREATE TABLE questions AS SELECT * FROM read_xlsx({}, header=true, all_varchar = true);",
-            EXCEL_FILE
-        );
+            const auto query = std::format(
+                "CREATE TABLE questions AS SELECT * FROM read_xlsx('{}', header=true, all_varchar = true);",
+                EXCEL_FILE
+            );
 
-        duckdb_result result;
-        if (duckdb_query(question_conn_, query.c_str(), &result) != DuckDBSuccess)
-            throw std::runtime_error("Failed to create questions table from Excel file.");
-        duckdb_destroy_result(&result);
-        std::cout << "[DuckDB] Loaded Excel file into in-memory table successfully.\n";
+            duckdb_result result;
+            if (duckdb_query(question_conn_, query.c_str(), &result) != DuckDBSuccess)
+                throw std::runtime_error("Failed to create questions table from Excel file:");
+            duckdb_destroy_result(&result);
+            std::cout << "[DuckDB] Loaded Excel file into in-memory table successfully.\n";
+        } while (false);
 
-        //  Podium
-        if (duckdb_open(PODIUM_DB_FILE, &podium_db_) != DuckDBSuccess)
-            throw std::runtime_error("Failed to open Podium DuckDB database.");
-        if (duckdb_connect(podium_db_, &podium_conn_) != DuckDBSuccess)
-            throw std::runtime_error("Failed to connect to Podium DuckDB database.");
+        do {
+            //  Podium
+            if (duckdb_open(PODIUM_DB_FILE, &podium_db_) != DuckDBSuccess)
+                throw std::runtime_error("Failed to open Podium DuckDB database.");
+            if (duckdb_connect(podium_db_, &podium_conn_) != DuckDBSuccess)
+                throw std::runtime_error("Failed to connect to Podium DuckDB database.");
 
-        if (const auto podium_query = "create table if not exists PodiumData(UUID VARCHAR PRIMARY KEY, TimeElapsed INT);";
-            duckdb_query(podium_conn_, podium_query, nullptr) != DuckDBSuccess)
-            throw std::runtime_error("Failed to create podium_data table.");
+            if (const auto podium_query = "create table if not exists PodiumData(uuid VARCHAR PRIMARY KEY, timeElapsed INTEGER, stamp TIMESTAMP_S default (CURRENT_TIMESTAMP::TIMESTAMP));";
+                duckdb_query(podium_conn_, podium_query, nullptr) != DuckDBSuccess)
+                throw std::runtime_error("Failed to create podium_data table.");
+        } while (false);
     }
 
     Database::~Database() {
@@ -121,7 +125,7 @@ namespace EMProj_QML_Backend {
 
     void Database::savePodiumData(const QString& uuid, const int timeElapsed) const {
         static constexpr auto insert_query = R"(
-            INSERT INTO PodiumData(uuid, timeElapsed)
+            INSERT INTO PodiumData (uuid, timeElapsed)
             VALUES (?, ?)
             ON CONFLICT (uuid) DO UPDATE SET timeElapsed = excluded.timeElapsed;
         )";

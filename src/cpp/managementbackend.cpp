@@ -1,7 +1,9 @@
 #include "managementbackend.hpp"
-using EMProj_QML_Backend::Database;
 #include <iostream>
 #include <QUuid>
+#include <format>
+#include <algorithm>
+using EMProj_QML_Backend::Database;
 
 //  Qt Properties
 int ManagementBackend::correctCount() const {
@@ -58,18 +60,18 @@ ManagementBackend::ManagementBackend(QObject* parent)
     incorrectSound_->setSource({"qrc:/sounds/sounds/ohno.wav"});
 
     audioOutput_ = std::make_unique<QAudioOutput>();
-    audioOutput_->setVolume(0.15f);
+    audioOutput_->setVolume(0.25f);
+    audioOutput_->setMuted(currentMuted_);
 
     player_ = std::make_unique<QMediaPlayer>();
     player_->setAudioOutput(audioOutput_.get());
     player_->setSource({"qrc:/sounds/sounds/OMFG_Pizza.mp3"});
     player_->setLoops(QMediaPlayer::Infinite);
+    player_->setPlaybackRate(0.793);
 }
 
 ManagementBackend::~ManagementBackend() {
-    if (player_->isPlaying()) {
-        player_->stop();
-    }
+    this->startBackground();
     this->clearQuestions();
 }
 
@@ -100,9 +102,11 @@ void ManagementBackend::stopBackground() const {
 }
 
 //  Database
-void ManagementBackend::loadQuestions(int, const int quantity) {
+void ManagementBackend::loadQuestions(const int quantity) {
     questionList_.clear();
     currentQuestionIndex_ = 0;
+    correctCount_ = 0;
+    incorrectCount_ = 0;
 
     connect(&Database::instance(), &Database::questionDataReady, this, &ManagementBackend::onQuestionDataReady, Qt::UniqueConnection);
 
@@ -110,22 +114,17 @@ void ManagementBackend::loadQuestions(int, const int quantity) {
 }
 
 void ManagementBackend::onQuestionDataReady(const QList<QuestionData>& q) {
+    this->startBackground();
     questionList_ = q;
     emit currentQuestionChanged();
-}
-
-
-void ManagementBackend::releaseQuestions() {
-    this->clearQuestions();
 }
 
 void ManagementBackend::clearQuestions() {
     questionList_.clear();
     currentQuestionIndex_ = -1;
-    emit currentQuestionChanged();
 }
 
-void ManagementBackend::handleAnswer(const QString& answer, const int id) {
+void ManagementBackend::handleAnswer(const QString& answer) {
     if (currentQuestionIndex_ < 0 || currentQuestionIndex_ >= questionList_.size()) return;
 
     auto& question = questionList_[currentQuestionIndex_];
@@ -152,7 +151,7 @@ void ManagementBackend::handleAnswer(const QString& answer, const int id) {
     emit progressChanged();
 }
 
-void ManagementBackend::finalize() const {
+void ManagementBackend::finalize(){
     this->stopBackground();
 
     const auto correct = std::ranges::count_if(questionList_, [](const QuestionData& i){return i.correctText_ == i.sessionSelectedAnswer_;});
@@ -161,15 +160,15 @@ void ManagementBackend::finalize() const {
     const bool ok = std::ranges::all_of(questionList_, [](const QuestionData& i){return i.correctText_ == i.sessionSelectedAnswer_;});
     std::cout << "Can be inserted to podium: " << std::boolalpha << ok << '\n';
 
-    const int64_t totalTime = std::accumulate(questionList_.begin(), questionList_.end(), 0LL,
+    const auto totalTime = std::accumulate(questionList_.begin(), questionList_.end(), 0,
         [](const int64_t acc, const QuestionData& q){ return acc + q.sessionTimeSpentMs_; });
     std::cout << "Total time spent (ms): " << totalTime << '\n';
 
-    if (ok) {
-        const auto uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);
-        constexpr auto timeElapsed = 8000; //  Placeholder time elapsed
-        Database::instance().savePodiumData(uuid, timeElapsed);
-    }
+    totalElapsedMS_ = totalTime;
+
+    if (!ok) return;
+    const auto uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    Database::instance().savePodiumData(uuid, totalTime);
 }
 
 void ManagementBackend::startTimer() {
@@ -184,4 +183,17 @@ void ManagementBackend::endTimer() {
         questionList_[currentQuestionIndex_].sessionTimeSpentMs_ = duration;
         std::cout << "Question ID " << questionList_[currentQuestionIndex_].id_ << " answered in " << duration << " ms.\n";
     }
+}
+
+QString ManagementBackend::getElapsedTime() const {
+    return QString::fromStdString(
+        std::format("{:%M:%S}", std::chrono::milliseconds(totalElapsedMS_))
+    );
+}
+
+QList<QVariant> ManagementBackend::getSessionQuestionData() const {
+    QList<QVariant> result;
+    result.reserve(questionList_.size());
+    std::ranges::transform(questionList_, std::back_inserter(result), [](const QuestionData& data){return QVariant::fromValue(data);});
+    return result;
 }

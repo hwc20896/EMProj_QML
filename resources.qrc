@@ -6,6 +6,7 @@
         <file>src/ui/Game.qml</file>
         <file>src/ui/QuestionWidget.qml</file>
         <file>src/ui/Outro.qml</file>
+        <file>src/ui/OutroQuestionWidget.qml</file>
     </qresource>
     <qresource prefix="/images">
         <file>drawables/firstpagebg.png</file>
@@ -18,5 +19,11 @@
         <file>sounds/bingo.wav</file>
         <file>sounds/ohno.wav</file>
         <file>sounds/OMFG_Pizza.mp3</file>
+    </qresource>
+    <qresource prefix="/rank">
+        <file>assets/Dungeon_Ranking_A.png</file>
+        <file>assets/Dungeon_Ranking_B.png</file>
+        <file>assets/Dungeon_Ranking_C.png</file>
+        <file>assets/Dungeon_Ranking_S.png</file>
     </qresource>
 </RCC>

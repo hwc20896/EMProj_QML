@@ -8,8 +8,6 @@ ApplicationWindow{
     minimumWidth: 1100
     minimumHeight: 750
 
-    property int currentGamemode: 0
-
     readonly property Component introPageComponent: Qt.createComponent("Intro.qml")
     readonly property Component gamePageComponent: Qt.createComponent("Game.qml")
     readonly property Component outroPageComponent: Qt.createComponent("Outro.qml")

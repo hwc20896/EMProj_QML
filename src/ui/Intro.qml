@@ -18,7 +18,7 @@ Page{
             Image{
                 id: introBackground
                 anchors.fill: parent
-                source: "qrc:images/drawables/firstpagebg.png"
+                source: "qrc:/images/drawables/firstpagebg.png"
                 fillMode: Image.Stretch
             }
 
@@ -61,16 +61,6 @@ Page{
                     Layout.bottomMargin: root.height * 0.1
                     spacing: 50
 
-                    ComboBox{
-                        id: gamemodeChooser
-                        Layout.preferredWidth: 230
-                        Layout.preferredHeight: 100
-
-                        editable: false
-                        model: ["所有題目","只有基本法","只有憲法"]
-                        font.pointSize: 20
-                    }
-
                     Button{
                         id: startGame
                         Layout.preferredWidth: 300
@@ -79,7 +69,6 @@ Page{
                         font.pointSize: 20
                         onClicked: {
                             backend.initialize();
-                            currentGamemode = gamemodeChooser.currentIndex;
                             stackView.push(getGame());
                         }
                     }
@@ -129,18 +118,22 @@ Page{
                             anchors.margins: 35
 
                             id: ruleContext
-                            text: `（遊戲以程序檔 (.exe) 呈現）
+                            text: `
+這是一個問答遊戲（選擇題 / 是非題）。
+題庫共有22題，系統每輪會抽取10條題目進行遊戲。
+玩家需依次作答，答對會播放恭喜音效，答錯則播放鼓勵音效。
+正確與否，在玩家回答後都出現正確答案。
 
-玩法：{0}
-每輪遊戲可選擇不同模式（全部題目、僅基本法、僅憲法），系統會隨機抽取{1}題。
-玩家需依次作答，答對可進入下一題並播放恭喜音效，答錯則顯示正確答案並播放鼓勵音效。
-基本法題庫共{2}題，憲法題庫共{3}題，每輪將隨機抽出{1}題進行遊戲。
+額外：
+- 全對的玩家可登上排行榜（根據時間決定名次）。玩家信息會以UUID v4存儲。
+
+更多功能敬請期待！
 
 等級劃分：（正確率）
-    80% ~ 100%  -> S
-    55% ~ 80%   -> A
-    30% ~ 55%   -> B
-    0% ~  30%   -> C`
+    81% ~ 100%  -> S
+    61% ~ 80%   -> A
+    41% ~ 60%   -> B
+    0%  ~ 40%   -> C`
 
                             color: "black"
                             font.pointSize: 14

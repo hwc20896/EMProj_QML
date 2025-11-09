@@ -45,7 +45,7 @@ class ManagementBackend final : public QObject {
         explicit ManagementBackend(QObject* parent = nullptr);
         ~ManagementBackend() override;
         Q_INVOKABLE void initialize();
-        Q_INVOKABLE void finalize() const;
+        Q_INVOKABLE void finalize();
         Q_INVOKABLE void startTimer();
         void endTimer();
     private:
@@ -58,7 +58,8 @@ class ManagementBackend final : public QObject {
 
         int currentQuestionIndex_ = -1;
         int progress_ = 0;
-        bool currentMuted_ = false;
+        bool currentMuted_ = true;
+        int totalElapsedMS_ = 0;
 
         QList<QuestionData> questionList_;
         void clearQuestions();
@@ -72,7 +73,10 @@ class ManagementBackend final : public QObject {
         Q_INVOKABLE void stopBackground() const;
 
     //  Database
-        Q_INVOKABLE void loadQuestions(int gamemode, int quantity);
-        Q_INVOKABLE void handleAnswer(const QString& answer, int id);
-        Q_INVOKABLE void releaseQuestions();
+        Q_INVOKABLE void loadQuestions(int quantity);
+        Q_INVOKABLE void handleAnswer(const QString &answer);
+
+    //  Outro
+        [[nodiscard]] Q_INVOKABLE QString getElapsedTime() const;
+        [[nodiscard]] Q_INVOKABLE QList<QVariant> getSessionQuestionData() const;
 };

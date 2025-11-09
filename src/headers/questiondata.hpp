@@ -41,9 +41,9 @@ class QuestionData {
         ) : id_(id),
             questionTitle_(std::move(title)),
             options_(QJsonValue::fromJson(optionsJson.toUtf8()).toVariant().toStringList()),
+            description_(std::move(description)),
             questionType_(std::move(questionType)),
-            optionType_(std::move(optionType)),
-            description_(std::move(description))
+            optionType_(std::move(optionType))
         {
             correctText_ = options_.at(correct);
 
