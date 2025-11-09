@@ -52,8 +52,9 @@ namespace EMProj_QML_Backend {
             if (duckdb_connect(podium_db_, &podium_conn_) != DuckDBSuccess)
                 throw std::runtime_error("Failed to connect to Podium DuckDB database.");
 
-            if (const auto podium_query = "create table if not exists PodiumData(uuid VARCHAR PRIMARY KEY, timeElapsed INTEGER, stamp TIMESTAMP_S default (CURRENT_TIMESTAMP::TIMESTAMP));";
-                duckdb_query(podium_conn_, podium_query, nullptr) != DuckDBSuccess)
+            static constexpr auto podium_query = "create table if not exists PodiumData(uuid VARCHAR PRIMARY KEY, timeElapsed INTEGER, stamp INTEGER default (CAST(strftime('%s', 'now') AS INTEGER));";
+
+            if (duckdb_query(podium_conn_, podium_query, nullptr) != DuckDBSuccess)
                 throw std::runtime_error("Failed to create podium_data table.");
 
             isInitialized_.store(true, std::memory_order_release);
@@ -61,7 +62,7 @@ namespace EMProj_QML_Backend {
         }
         catch (const std::exception& e) {
             std::cerr << "Database initialization error: " << e.what() << std::endl;
-            QMetaObject::invokeMethod(this, [this, e]() {
+            QMetaObject::invokeMethod(this, [this, e] {
                 emit initializationError(QString::fromUtf8(e.what()));
             }, Qt::QueuedConnection);
         }

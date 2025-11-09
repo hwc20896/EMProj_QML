@@ -90,6 +90,7 @@ ColumnLayout{
             return "";
         }
         font.pointSize: 20
-        color: "#0000ff"
+        font.bold: true
+        color: "#ffffff"
     }
 }
