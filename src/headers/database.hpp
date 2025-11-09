@@ -42,6 +42,8 @@ namespace EMProj_QML_Backend {
         public:
             /*  Saves the podium data with the given UUID and time elapsed in milliseconds. */
             void savePodiumData(const QString& uuid, int timeElapsed) const;
+
+        private:
             duckdb_database podium_db_ = nullptr;
             duckdb_connection podium_conn_ = nullptr;
             static constexpr auto PODIUM_DB_FILE = "podium_data.db";
