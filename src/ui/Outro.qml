@@ -59,6 +59,7 @@ Page{
                         Layout.preferredHeight: 100
                         Layout.preferredWidth: 300
                         font.pointSize: 20
+                        onClicked: stackView.replace(getGame())
                     }
                 }
 
@@ -235,13 +236,13 @@ https://github.com/hwc20896/EMProj_QML"
 
                     ColumnLayout{
                         spacing: 20
-                        width: parent.width
+                        Layout.fillWidth: true
 
                         Repeater{
                             model: backend.getSessionQuestionData()
 
                             OutroQuestionWidget{
-                                width: parent.width
+                                Layout.fillWidth: true
                                 questionIndex: index
                                 questionTitle: modelData.questionTitle
                                 options: modelData.options
