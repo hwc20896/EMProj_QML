@@ -107,6 +107,10 @@ void ManagementBackend::loadQuestions(const int quantity) {
     currentQuestionIndex_ = 0;
     correctCount_ = 0;
     incorrectCount_ = 0;
+    progress_ = 0;
+    emit correctCountChanged();
+    emit incorrectCountChanged();
+    emit progressChanged();
 
     connect(&Database::instance(), &Database::questionDataReady, this, &ManagementBackend::onQuestionDataReady, Qt::UniqueConnection);
 
