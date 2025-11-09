@@ -54,6 +54,7 @@ void ManagementBackend::setCurrentMuted(const bool muted) {
 ManagementBackend::ManagementBackend(QObject* parent)
     : QObject(parent), correctCount_(0), incorrectCount_(0)
 {
+    static_cast<void>(Database::instance());
     correctSound_ = std::make_unique<QSoundEffect>();
     correctSound_->setSource({"qrc:/sounds/sounds/bingo.wav"});
     incorrectSound_ = std::make_unique<QSoundEffect>();
