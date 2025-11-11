@@ -52,7 +52,7 @@ namespace EMProj_QML_Backend {
             if (duckdb_connect(podium_db_, &podium_conn_) != DuckDBSuccess)
                 throw std::runtime_error("Failed to connect to Podium DuckDB database.");
 
-            static constexpr auto podium_query = "create table if not exists PodiumData(uuid VARCHAR PRIMARY KEY, timeElapsed INTEGER, stamp INTEGER default (CAST(strftime('%s', 'now') AS INTEGER));";
+            static constexpr auto podium_query = "create table if not exists PodiumData(uuid VARCHAR PRIMARY KEY, timeElapsed INTEGER, stamp INTEGER DEFAULT (CAST(EPOCH(CURRENT_TIMESTAMP) AS INTEGER)));";
 
             if (duckdb_query(podium_conn_, podium_query, nullptr) != DuckDBSuccess)
                 throw std::runtime_error("Failed to create podium_data table.");

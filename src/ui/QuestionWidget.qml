@@ -6,9 +6,9 @@ ColumnLayout{
     id: questionRoot
 
     //  Examples
-    property string title: "為什麽CJY這麽on9？"
-    property var optionText: ["因為他on", "因為他有點on", "找ljq問去", "不L關我事"]
-    property string descriptionText: "俺覺得CJY和ljq撮合撮合非常合適。"
+    property string title: ""
+    property var optionText: []
+    property string descriptionText: ""
 
     spacing: 30
 

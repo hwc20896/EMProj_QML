@@ -3,6 +3,7 @@
 #include <QUuid>
 #include <format>
 #include <algorithm>
+#include <QDebug>
 using EMProj_QML_Backend::Database;
 
 //  Qt Properties
@@ -34,6 +35,35 @@ bool ManagementBackend::currentMuted() const {
     return currentMuted_;
 }
 
+bool ManagementBackend::isPopWrongEnabled() const {
+    return isPopWrongEnabled_;
+}
+
+bool ManagementBackend::isReviveEnabled() const {
+    return isReviveEnabled_;
+}
+
+void ManagementBackend::revokeMatch() {
+    const auto currentQuestion = questionList_.at(currentQuestionIndex_);
+    if (!isPopWrongEnabled_ || currentQuestion.sessionAnswered_) return;
+    if (currentQuestion.options_.size() == 2) {
+        std::cout << "Pop Wrong is not supported in True or False questions\n";
+        return;
+    }
+
+    isPopWrongEnabled_ = false;
+    consecutive11_ = 0;
+    emit isPopWrongEnabledChanged();
+
+    thread_local std::mt19937 mt{std::random_device{}()};
+
+    QStringList wrongOptions;
+    std::ranges::remove_copy(currentQuestion.options_, std::back_inserter(wrongOptions), currentQuestion.correctText_);
+    std::uniform_int_distribution dist(0LL, currentQuestion.options_.size()-1);
+    qDebug() << "Popping option: " << wrongOptions.at(dist(mt));
+    swoon_->play();
+}
+
 void ManagementBackend::setCurrentQuestionIndex(const int index) {
     if (index >= 0 && index < questionList_.size() && index != currentQuestionIndex_) {
         currentQuestionIndex_ = index;
@@ -50,6 +80,12 @@ void ManagementBackend::setCurrentMuted(const bool muted) {
     }
 }
 
+void ManagementBackend::setCurrentReviveEnabled(const bool enabled) {
+    if (enabled == isPopWrongEnabled_) return;
+    isPopWrongEnabled_ = enabled;
+    emit isPopWrongEnabledChanged();
+}
+
 //  Class methods
 ManagementBackend::ManagementBackend(QObject* parent)
     : QObject(parent), correctCount_(0), incorrectCount_(0)
@@ -59,6 +95,9 @@ ManagementBackend::ManagementBackend(QObject* parent)
     correctSound_->setSource({"qrc:/sounds/sounds/bingo.wav"});
     incorrectSound_ = std::make_unique<QSoundEffect>();
     incorrectSound_->setSource({"qrc:/sounds/sounds/ohno.wav"});
+    swoon_ = std::make_unique<QSoundEffect>();
+    swoon_->setSource({"qrc:/sounds/sounds/swoon.wav"});
+    swoon_->setVolume(0.7f);
 
     audioOutput_ = std::make_unique<QAudioOutput>();
     audioOutput_->setVolume(0.25f);
@@ -83,6 +122,11 @@ void ManagementBackend::playCorrect() const {
 void ManagementBackend::playIncorrect() const {
     incorrectSound_->play();
 }
+
+void ManagementBackend::playSwoon() const {
+    swoon_->play();
+}
+
 
 void ManagementBackend::initialize() {
     correctCount_ = 0;
@@ -109,9 +153,13 @@ void ManagementBackend::loadQuestions(const int quantity) {
     correctCount_ = 0;
     incorrectCount_ = 0;
     progress_ = 0;
+    isPopWrongEnabled_ = false;
+    isReviveEnabled_ = false;
     emit correctCountChanged();
     emit incorrectCountChanged();
     emit progressChanged();
+    emit isPopWrongEnabledChanged();
+    emit isReviveEnabledChanged();
 
     connect(&Database::instance(), &Database::questionDataReady, this, &ManagementBackend::onQuestionDataReady, Qt::UniqueConnection);
 
@@ -141,19 +189,30 @@ void ManagementBackend::handleAnswer(const QString& answer) {
 
     question.sessionSelectedAnswer_ = answer;
 
+    //  Update progress
+    progress_++;
+    emit progressChanged();
+
     if (answer == question.correctText_) {
         correctCount_++;
         emit correctCountChanged();
         this->playCorrect();
+        if (question.sessionTimeSpentMs_ < 7000) {
+            consecutive11_++;
+
+            //  ¬(A·B) = ¬A+¬B
+            if (consecutive11_ < 3 || isPopWrongEnabled_) return;
+            isPopWrongEnabled_ = true;
+            emit isPopWrongEnabledChanged();
+            std::cout << "isPopWrongEnabled up\n";
+        }
     } else {
         incorrectCount_++;
         emit incorrectCountChanged();
         this->playIncorrect();
+        consecutive11_ = 0;
     }
 
-    //  Update progress
-    progress_++;
-    emit progressChanged();
 }
 
 void ManagementBackend::finalize(){

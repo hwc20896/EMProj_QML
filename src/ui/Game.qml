@@ -20,6 +20,8 @@ Page{
 
     signal gameFinished()
 
+    property bool isReviveChecked: false
+
     Connections{
         target: backend
 
@@ -94,6 +96,7 @@ Page{
             Layout.bottomMargin: 20
             Layout.alignment: Qt.AlignBottom
             Layout.fillWidth: true
+            spacing: 30
 
             Button{
                 id: prevButton
@@ -108,6 +111,59 @@ Page{
             }
 
             Item{ Layout.fillWidth: true }
+
+            Button{
+                id: reviveEnabledButton
+                Layout.preferredHeight: 60
+                Layout.preferredWidth: 60
+
+                icon{
+                    readonly property string disabledReviveURL: "qrc:/images/assets/Revive_Stone_Blackout.png"
+                    readonly property string enabledReviveURL: "qrc:/images/assets/Revive_Stone.png"
+
+                    source: backend.isReviveEnabled? enabledReviveURL : disabledReviveURL
+                    width: 50
+                    height: 50
+                    color: "transparent"
+                }
+
+                background: Rectangle{
+                    color: {
+                        if (!backend.isReviveEnabled) return "#e0e0e0";
+                        if (!isReviveChecked) return "#efbf04";
+                        return "#00ccdd";
+                    }
+                    radius: 5
+                }
+
+                onClicked: isReviveChecked = !isReviveChecked
+            }
+
+            Button{
+                id: popWrongButton
+                Layout.preferredHeight: 60
+                Layout.preferredWidth: 60
+
+                icon{
+                    readonly property string disabledPopWrong: "qrc:/images/assets/Pop_Wrong_Blackout.png"
+                    readonly property string enabledPopWrong: "qrc:/images/assets/Pop_Wrong.png"
+
+                    source: backend.isPopWrongEnabled? enabledPopWrong : disabledPopWrong
+                    width: 50
+                    height: 50
+                    color: "transparent"
+                }
+
+                background: Rectangle{
+                    color: {
+                        if (!backend.isPopWrongEnabled) return "#e0e0e0";
+                        return "#efbf04";
+                    }
+                    radius: 5
+                }
+
+                onClicked: backend.revokeMatch()
+            }
 
             Button{
                 id: nextButton

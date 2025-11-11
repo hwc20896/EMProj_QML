@@ -14,10 +14,15 @@
         <file>drawables/qnabg.png</file>
         <file>drawables/mute.png</file>
         <file>drawables/unmute.png</file>
+        <file>assets/Pop_Wrong.png</file>
+        <file>assets/Pop_Wrong_Blackout.png</file>
+        <file>assets/Revive_Stone.png</file>
+        <file>assets/Revive_Stone_Blackout.png</file>
     </qresource>
     <qresource prefix="/sounds">
         <file>sounds/bingo.wav</file>
         <file>sounds/ohno.wav</file>
+        <file>sounds/swoon.wav</file>
         <file>sounds/OMFG_Pizza.mp3</file>
     </qresource>
     <qresource prefix="/rank">

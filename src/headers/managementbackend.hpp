@@ -17,6 +17,8 @@ class ManagementBackend final : public QObject {
     Q_PROPERTY(int progress READ progress NOTIFY progressChanged)
     Q_PROPERTY(int currentQuestionIndex WRITE setCurrentQuestionIndex READ getCurrentQuestionIndex NOTIFY currentQuestionIndexChanged)
     Q_PROPERTY(bool isMuted WRITE setCurrentMuted READ currentMuted NOTIFY currentMutedChanged)
+    Q_PROPERTY(bool isPopWrongEnabled READ isPopWrongEnabled NOTIFY isPopWrongEnabledChanged)
+    Q_PROPERTY(bool isReviveEnabled READ isReviveEnabled NOTIFY isReviveEnabledChanged)
     public:
         [[nodiscard]] int correctCount() const;
         [[nodiscard]] int incorrectCount() const;
@@ -24,9 +26,12 @@ class ManagementBackend final : public QObject {
         [[nodiscard]] int progress() const;
         [[nodiscard]] int getCurrentQuestionIndex() const;
         [[nodiscard]] bool currentMuted() const;
+        [[nodiscard]] bool isPopWrongEnabled() const;
+        [[nodiscard]] bool isReviveEnabled() const;
     public slots:
         void setCurrentQuestionIndex(int index);
         void setCurrentMuted(bool muted);
+        void setCurrentReviveEnabled(bool enabled);
 
         void onQuestionDataReady(const QList<QuestionData>& q);
 
@@ -37,8 +42,9 @@ class ManagementBackend final : public QObject {
         void progressChanged();
         void currentQuestionIndexChanged();
         void currentMutedChanged();
-
+        void isPopWrongEnabledChanged();
         void currentAnsweredChanged();
+        void isReviveEnabledChanged();
 
     //  Class methods
     public:
@@ -53,6 +59,7 @@ class ManagementBackend final : public QObject {
         std::unique_ptr<QSoundEffect> correctSound_, incorrectSound_;
         std::unique_ptr<QMediaPlayer> player_;
         std::unique_ptr<QAudioOutput> audioOutput_;
+        std::unique_ptr<QSoundEffect> swoon_;
 
         std::chrono::steady_clock::time_point questionStartTime_, questionEndTime_;
 
@@ -64,6 +71,11 @@ class ManagementBackend final : public QObject {
         QList<QuestionData> questionList_;
         void clearQuestions();
 
+    //  Task 3
+        bool isPopWrongEnabled_ = false;
+        bool isReviveEnabled_ = false;
+        int consecutive11_ = 0;
+
     //  Invokable
     public:
         Q_INVOKABLE void playCorrect() const;
@@ -71,6 +83,9 @@ class ManagementBackend final : public QObject {
 
         Q_INVOKABLE void startBackground() const;
         Q_INVOKABLE void stopBackground() const;
+
+        Q_INVOKABLE void playSwoon() const;
+        Q_INVOKABLE void revokeMatch();
 
     //  Database
         Q_INVOKABLE void loadQuestions(int quantity);
