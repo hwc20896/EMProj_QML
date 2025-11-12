@@ -43,25 +43,26 @@ bool ManagementBackend::isReviveEnabled() const {
     return isReviveEnabled_;
 }
 
-void ManagementBackend::revokeMatch() {
+QString ManagementBackend::revokeMatch() {
     const auto currentQuestion = questionList_.at(currentQuestionIndex_);
-    if (!isPopWrongEnabled_ || currentQuestion.sessionAnswered_) return;
+    if (!isPopWrongEnabled_ || currentQuestion.sessionAnswered_) return "";
     if (currentQuestion.options_.size() == 2) {
         std::cout << "Pop Wrong is not supported in True or False questions\n";
-        return;
+        return "";
     }
 
     isPopWrongEnabled_ = false;
-    consecutive11_ = 0;
+    consecutivePopWrong_ = 0;
     emit isPopWrongEnabledChanged();
 
     thread_local std::mt19937 mt{std::random_device{}()};
 
     QStringList wrongOptions;
     std::ranges::remove_copy(currentQuestion.options_, std::back_inserter(wrongOptions), currentQuestion.correctText_);
-    std::uniform_int_distribution dist(0LL, currentQuestion.options_.size()-1);
-    qDebug() << "Popping option: " << wrongOptions.at(dist(mt));
-    swoon_->play();
+    std::uniform_int_distribution dist(0LL, wrongOptions.size()-1);
+    const auto targetWrongOption = wrongOptions.at(dist(mt));
+    qDebug() << "Popping option: " << targetWrongOption;
+    return targetWrongOption;
 }
 
 void ManagementBackend::setCurrentQuestionIndex(const int index) {
@@ -127,7 +128,6 @@ void ManagementBackend::playSwoon() const {
     swoon_->play();
 }
 
-
 void ManagementBackend::initialize() {
     correctCount_ = 0;
     incorrectCount_ = 0;
@@ -155,6 +155,9 @@ void ManagementBackend::loadQuestions(const int quantity) {
     progress_ = 0;
     isPopWrongEnabled_ = false;
     isReviveEnabled_ = false;
+    consecutivePopWrong_ = 0;
+    consecutiveRevive_ = 0;
+
     emit correctCountChanged();
     emit incorrectCountChanged();
     emit progressChanged();
@@ -197,11 +200,18 @@ void ManagementBackend::handleAnswer(const QString& answer) {
         correctCount_++;
         emit correctCountChanged();
         this->playCorrect();
+
+        consecutiveRevive_++;
+        if (consecutiveRevive_ >= 5) {
+            isReviveEnabled_ = true;
+            emit isReviveEnabledChanged();
+            std::cout << "isReviveEnabled up\n";
+        }
         if (question.sessionTimeSpentMs_ < 7000) {
-            consecutive11_++;
+            consecutivePopWrong_++;
 
             //  ¬(A·B) = ¬A+¬B
-            if (consecutive11_ < 3 || isPopWrongEnabled_) return;
+            if (consecutivePopWrong_ < 3 || isPopWrongEnabled_) return;
             isPopWrongEnabled_ = true;
             emit isPopWrongEnabledChanged();
             std::cout << "isPopWrongEnabled up\n";
@@ -210,7 +220,8 @@ void ManagementBackend::handleAnswer(const QString& answer) {
         incorrectCount_++;
         emit incorrectCountChanged();
         this->playIncorrect();
-        consecutive11_ = 0;
+        consecutivePopWrong_ = 0;
+        consecutiveRevive_ = 0;
     }
 
 }

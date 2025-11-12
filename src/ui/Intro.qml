@@ -65,7 +65,7 @@ Page{
                         id: startGame
                         Layout.preferredWidth: 300
                         Layout.preferredHeight: 100
-                        text: "開始游戲"
+                        text: "開始遊戲"
                         font.pointSize: 20
                         onClicked: {
                             backend.initialize();
@@ -91,7 +91,7 @@ Page{
 
                 Text{
                     id: ruleTitle
-                    text: "游戲規則"
+                    text: "遊戲規則"
                     Layout.topMargin: 20
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
 

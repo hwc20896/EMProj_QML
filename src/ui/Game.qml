@@ -162,7 +162,11 @@ Page{
                     radius: 5
                 }
 
-                onClicked: backend.revokeMatch()
+                onClicked: function(){
+                    const option = backend.revokeMatch();
+                    if (option.length === 0) return;
+                    questionWidget.popOption(option);
+                }
             }
 
             Button{

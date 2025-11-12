@@ -74,7 +74,8 @@ class ManagementBackend final : public QObject {
     //  Task 3
         bool isPopWrongEnabled_ = false;
         bool isReviveEnabled_ = false;
-        int consecutive11_ = 0;
+        int consecutivePopWrong_ = 0;
+        int consecutiveRevive_ = 0;
 
     //  Invokable
     public:
@@ -85,7 +86,7 @@ class ManagementBackend final : public QObject {
         Q_INVOKABLE void stopBackground() const;
 
         Q_INVOKABLE void playSwoon() const;
-        Q_INVOKABLE void revokeMatch();
+        Q_INVOKABLE QString revokeMatch();
 
     //  Database
         Q_INVOKABLE void loadQuestions(int quantity);

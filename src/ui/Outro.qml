@@ -80,6 +80,12 @@ Page{
         Rectangle{
             id: infoPage
 
+            Image{
+                anchors.fill: parent
+                source: "qrc:/images/drawables/status_info.png"
+                fillMode: Image.Stretch
+            }
+
             ColumnLayout{
                 anchors.fill: parent
                 Text{
@@ -132,6 +138,12 @@ https://github.com/hwc20896/EMProj_QML"
 
         Rectangle{
             id: resultPage
+
+            Image{
+                anchors.fill: parent
+                source: "qrc:/images/drawables/result.png"
+                fillMode: Image.Stretch
+            }
 
             ColumnLayout{
                 anchors.fill: parent
@@ -215,6 +227,12 @@ https://github.com/hwc20896/EMProj_QML"
 
         Rectangle{
             id: statusPage
+
+            Image{
+                anchors.fill: parent
+                source: "qrc:/images/drawables/status_info.png"
+                fillMode: Image.Stretch
+            }
 
             ColumnLayout{
                 anchors.fill: parent
