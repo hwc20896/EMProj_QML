@@ -136,7 +136,10 @@ Page{
                     radius: 5
                 }
 
-                onClicked: isReviveChecked = !isReviveChecked
+                onClicked: {
+                    if (incorrectCount === 0) return;
+                    isReviveChecked = !isReviveChecked;
+                }
             }
 
             Button{
