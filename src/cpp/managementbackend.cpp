@@ -272,3 +272,16 @@ QList<QVariant> ManagementBackend::getSessionQuestionData() const {
     std::ranges::transform(questionList_, std::back_inserter(result), [](const QuestionData& data){return QVariant::fromValue(data);});
     return result;
 }
+
+QVariant ManagementBackend::getRevivalQuestion() const {
+    if (incorrectCount_ == 0) return {};
+    thread_local std::mt19937 mt{std::random_device{}()};
+
+    QList<QuestionData> candidates;
+    std::ranges::remove_copy_if(questionList_, std::back_inserter(candidates), [](const QuestionData& q){return q.sessionSelectedAnswer_ == q.correctText_;});
+
+    std::uniform_int_distribution<int64_t> dist(0, candidates.size()-1);
+    const auto& target = candidates.at(dist(mt));
+    return QVariant::fromValue(target);
+}
+

@@ -88,6 +88,9 @@ class ManagementBackend final : public QObject {
         Q_INVOKABLE void playSwoon() const;
         Q_INVOKABLE QString revokeMatch();
 
+    //  Task 2
+        [[nodiscard]] Q_INVOKABLE QVariant getRevivalQuestion() const;
+
     //  Database
         Q_INVOKABLE void loadQuestions(int quantity);
         Q_INVOKABLE void handleAnswer(const QString &answer);
