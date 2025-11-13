@@ -80,10 +80,13 @@ ColumnLayout{
                     }
                 }
 
-                onClicked:{
-                    selectedOption = text
-                    backend.currentQuestion.sessionSelectedAnswer = text
-                    backend.handleAnswer(text);
+                onClicked: {
+                    if (isInReviveMode) {
+                        handleReviveAnswer(text);
+                    } else {
+                        selectedOption = text;
+                        backend.handleAnswer(text);
+                    }
                 }
 
                 // 劃線效果

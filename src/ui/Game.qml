@@ -21,11 +21,15 @@ Page{
     signal gameFinished()
 
     property bool isReviveChecked: false
+    property bool reviveAnswerRevealed: false
 
     Connections{
         target: backend
 
         function onCurrentQuestionChanged(){
+            // 如果在复活模式，忽略后端的题目更新
+            if (isInReviveMode) return;
+
             currentQuestion = backend.currentQuestion;
             selectedOption = backend.currentQuestion.sessionSelectedAnswer || "";
             correctOption = backend.currentQuestion.correctText || "";
@@ -33,11 +37,30 @@ Page{
         }
 
         function onCurrentAnsweredChanged(){
+            // 如果在复活模式，忽略后端的答案更新
+            if (isInReviveMode) return;
+
             answerRevealed = backend.currentQuestion.sessionAnswered;
             console.debug(answerRevealed)
             console.debug("Selected option: " + selectedOption)
             console.debug("Correct option: " + correctOption)
         }
+    }
+
+    // 修改 onRevive 函数
+    function onRevive(){
+        if (isInReviveMode) {
+            backend.finalize();
+            stackView.push(getOutro());
+            return;
+        }
+        reviveImg.opacity = 1.0
+        questionWidget.opacity = 0.0
+        progressDisplayer.opacity = 0.0
+        prevButton.opacity = 0.0
+        scoreDisplayer.opacity = 0.0
+        isInReviveMode = true
+        reviveFade.start()
     }
 
     Image{
@@ -89,6 +112,7 @@ Page{
             title: currentQuestion.questionTitle? currentQuestion.questionTitle : "載入中...\n如果一直停留在這裏，請上報GitHub Issues。"
             optionText: currentQuestion.options || []
             descriptionText: currentQuestion.description
+            opacity: 1.0
         }
 
         RowLayout{
@@ -181,16 +205,99 @@ Page{
                 font.pointSize: 15
                 enabled: answerRevealed
                 onClicked: {
+                    if (isInReviveMode) {
+                        // 复活模式下的特殊处理
+                        console.log("Revive question completed.")
+                        backend.finalize();
+                        stackView.replace(getOutro())
+                        return;
+                    }
+
                     if (backend.currentQuestionIndex < totalCount - 1) {
                         backend.startTimer();
                         backend.currentQuestionIndex += 1;
                     } else {
                         console.log("Last page reached.")
-                        backend.finalize();
-                        stackView.replace(getOutro())
+                        if (isReviveChecked) onRevive()
+                        else {
+                            backend.finalize();
+                            stackView.replace(getOutro())
+                        }
                     }
                 }
             }
         }
+    }
+
+    Image{
+        id: reviveImg
+        source: "qrc:/images/assets/Revive_Stone.png"
+        opacity: 0.0
+        anchors.centerIn: parent
+        width: 200
+        height: 200
+    }
+
+    // 在属性定义部分添加
+    property bool isInReviveMode: false
+    property var reviveQuestionData: ({})
+
+    // 修改 reviveFade 动画
+    SequentialAnimation {
+        id: reviveFade
+        PauseAnimation{
+            duration: 500
+        }
+        PropertyAnimation {
+            target: reviveImg
+            property: "opacity"
+            from: 1.0
+            to: 0.0
+            duration: 800
+            easing.type: Easing.InOutQuad
+        }
+        ScriptAction {
+            script: {
+                console.debug("I'm here!")
+                // 进入复活模式
+                isInReviveMode = true;
+                // 获取复活题目并保存
+                reviveQuestionData = backend.getRevivalQuestion();
+                // 直接设置题目内容
+                questionWidget.opacity = 1.0;
+                questionWidget.title = reviveQuestionData.questionTitle || "載入中...\n如果一直停留在這裏，請上報GitHub Issues。";
+                questionWidget.optionText = reviveQuestionData.options || [];
+                questionWidget.descriptionText = reviveQuestionData.description;
+
+                // 重置答案状态
+                answerRevealed = false;
+                selectedOption = "";
+                correctOption = reviveQuestionData.correctText || "";
+            }
+        }
+    }
+
+    function handleReviveAnswer(option) {
+        if (reviveAnswerRevealed) return;
+
+        reviveAnswerRevealed = true;
+        selectedOption = option;
+        correctOption = reviveQuestionData.correctText || "";
+
+        // 检查答案是否正确
+        const isCorrect = (option === correctOption);
+
+        if (isCorrect) {
+            // 答对了，播放正确声音
+            backend.playCorrect();
+            console.log("复活题目答对了！");
+        } else {
+            // 答错了，播放错误声音
+            backend.playIncorrect();
+            console.log("复活题目答错了");
+        }
+
+        // 显示答案
+        answerRevealed = true;
     }
 }
