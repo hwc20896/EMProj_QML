@@ -158,6 +158,7 @@ void ManagementBackend::loadQuestions(const int quantity) {
     consecutivePopWrong_ = 0;
     consecutiveRevive_ = 0;
 
+    emit currentQuestionIndexChanged();
     emit correctCountChanged();
     emit incorrectCountChanged();
     emit progressChanged();
