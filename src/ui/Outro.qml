@@ -112,7 +112,7 @@ Page{
 
                 Text{
                     text: "程式語言：C++, Qt
-使用音樂：OMFG - Pizza （手動降調至0.8）"
+使用音樂：LAMBDARUNE 3: Showtime Is Over"
                     font.pointSize: 20
                     Layout.alignment: Qt.AlignHCenter
                 }

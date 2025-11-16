@@ -26,6 +26,7 @@
         <file>sounds/ohno.wav</file>
         <file>sounds/swoon.wav</file>
         <file>sounds/OMFG_Pizza.mp3</file>
+        <file>sounds/Showtime Is Over - LAMBDARUNE Chapter 3 OST.mp3</file>
     </qresource>
     <qresource prefix="/rank">
         <file>assets/Dungeon_Ranking_A.png</file>
