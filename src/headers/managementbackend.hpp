@@ -69,6 +69,9 @@ class ManagementBackend final : public QObject {
         int totalElapsedMS_ = 0;
 
         QList<QuestionData> questionList_;
+
+        static constexpr auto funcCurrentQuestionCorrect = [](const QuestionData& i){return i.correctText_ == i.sessionSelectedAnswer_;};
+
         void clearQuestions();
 
     //  Task 3

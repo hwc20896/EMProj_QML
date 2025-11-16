@@ -39,4 +39,5 @@ target_link_libraries(
         Qt6::Multimedia
         Qt6::Concurrent
         ${CMAKE_BINARY_DIR}/duckdb.lib
+        "-lstdc++exp"
 )

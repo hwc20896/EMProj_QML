@@ -2,7 +2,7 @@
 
 #include <QFuture>
 #include <QtConcurrentRun>
-#include <iostream>
+#include <print>
 
 namespace EMProj_QML_Backend {
     Database::Database() {
@@ -44,7 +44,7 @@ namespace EMProj_QML_Backend {
             if (duckdb_query(question_conn_, query.c_str(), &result) != DuckDBSuccess)
                 throw std::runtime_error("Failed to create questions table from Excel file:");
             duckdb_destroy_result(&result);
-            std::cout << "[DuckDB] Loaded Excel file into in-memory table successfully.\n";
+            std::println("[DuckDB] Loaded Excel file into in-memory table successfully.");
 
             // Podium database
             if (duckdb_open(PODIUM_DB_FILE, &podium_db_) != DuckDBSuccess)
@@ -58,10 +58,10 @@ namespace EMProj_QML_Backend {
                 throw std::runtime_error("Failed to create podium_data table.");
 
             isInitialized_.store(true, std::memory_order_release);
-            std::cout << "[DuckDB] Database initialization completed successfully.\n";
+            std::println("[DuckDB] Database initialization completed successfully.");
         }
         catch (const std::exception& e) {
-            std::cerr << "Database initialization error: " << e.what() << std::endl;
+            std::println("Database initialization error: {}", e.what());
             QMetaObject::invokeMethod(this, [this, e] {
                 emit initializationError(QString::fromUtf8(e.what()));
             }, Qt::QueuedConnection);
@@ -91,8 +91,7 @@ namespace EMProj_QML_Backend {
                 emit questionDataReady(result);
             }
             catch (const std::exception& e) {
-                std::cout << "Error fetching question data.\n";
-                std::cout << e.what();
+                std::println("Error when fetching data. \n{}", e.what());
                 emit questionDataError(QString::fromUtf8(e.what()));
             }
         });
@@ -105,7 +104,7 @@ namespace EMProj_QML_Backend {
             throw std::runtime_error("Database is not initialized yet.");
         }
 
-        std::cout << "Fetching question data...\n";
+        std::println("Fetching question data...");
         QList<QuestionData> questions;
         duckdb_result result;
         static constexpr auto query_template = R"(
@@ -146,13 +145,13 @@ namespace EMProj_QML_Backend {
         }
         duckdb_destroy_result(&result);
         duckdb_destroy_prepare(&stmt);
-        std::cout << "Question data fetched successfully.\n";
+        std::println("Question data fetched successfully.");
         return questions;
     }
 
     void Database::savePodiumData(const QString& uuid, const int timeElapsed) const {
         if (!isInitialized_.load(std::memory_order_acquire)) {
-            std::cerr << "Database is not initialized yet. Cannot save podium data." << std::endl;
+            std::println("Database is not initialized yet. Cannot save podium data.");
             return;
         }
 

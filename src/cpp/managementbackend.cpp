@@ -3,7 +3,9 @@
 #include <QUuid>
 #include <format>
 #include <algorithm>
+#include <ranges>
 #include <QDebug>
+#include <print>
 using EMProj_QML_Backend::Database;
 
 //  Qt Properties
@@ -47,7 +49,7 @@ QString ManagementBackend::revokeMatch() {
     const auto currentQuestion = questionList_.at(currentQuestionIndex_);
     if (!isPopWrongEnabled_ || currentQuestion.sessionAnswered_) return "";
     if (currentQuestion.options_.size() == 2) {
-        std::cout << "Pop Wrong is not supported in True or False questions\n";
+        std::println("Pop Wrong is not supported in True or False questions");
         return "";
     }
 
@@ -106,9 +108,9 @@ ManagementBackend::ManagementBackend(QObject* parent)
 
     player_ = std::make_unique<QMediaPlayer>();
     player_->setAudioOutput(audioOutput_.get());
-    player_->setSource({"qrc:/sounds/sounds/OMFG_Pizza.mp3"});
+    player_->setSource({"qrc:/sounds/sounds/Showtime Is Over - LAMBDARUNE Chapter 3 OST.mp3"});
     player_->setLoops(QMediaPlayer::Infinite);
-    player_->setPlaybackRate(0.793);
+    //player_->setPlaybackRate(0.793);
 }
 
 ManagementBackend::~ManagementBackend() {
@@ -206,7 +208,7 @@ void ManagementBackend::handleAnswer(const QString& answer) {
         if (consecutiveRevive_ >= 5) {
             isReviveEnabled_ = true;
             emit isReviveEnabledChanged();
-            std::cout << "isReviveEnabled up\n";
+            std::println("isReviveEnabled up");
         }
         if (question.sessionTimeSpentMs_ < 7000) {
             consecutivePopWrong_++;
@@ -215,7 +217,7 @@ void ManagementBackend::handleAnswer(const QString& answer) {
             if (consecutivePopWrong_ < 3 || isPopWrongEnabled_) return;
             isPopWrongEnabled_ = true;
             emit isPopWrongEnabledChanged();
-            std::cout << "isPopWrongEnabled up\n";
+            std::println("isPopWrongEnabled up");
         }
     } else {
         incorrectCount_++;
@@ -230,15 +232,15 @@ void ManagementBackend::handleAnswer(const QString& answer) {
 void ManagementBackend::finalize(){
     this->stopBackground();
 
-    const auto correct = std::ranges::count_if(questionList_, [](const QuestionData& i){return i.correctText_ == i.sessionSelectedAnswer_;});
-    std::cout << "Correct answers: " << correct << " out of " << questionList_.size() << '\n';
+    const auto correct = std::ranges::count_if(questionList_, funcCurrentQuestionCorrect);
+    std::println("Correct answers: {} out of {}", correct, questionList_.size());
 
-    const bool ok = std::ranges::all_of(questionList_, [](const QuestionData& i){return i.correctText_ == i.sessionSelectedAnswer_;});
-    std::cout << "Can be inserted to podium: " << std::boolalpha << ok << '\n';
+    const bool ok = std::ranges::all_of(questionList_, funcCurrentQuestionCorrect);
+    std::println("Can be inserted to podium: {}", ok);
 
     const auto totalTime = std::accumulate(questionList_.begin(), questionList_.end(), 0,
         [](const int64_t acc, const QuestionData& q){ return acc + q.sessionTimeSpentMs_; });
-    std::cout << "Total time spent (ms): " << totalTime << '\n';
+    std::println("Total time spent (ms): {}", totalTime);
 
     totalElapsedMS_ = totalTime;
 
@@ -256,8 +258,9 @@ void ManagementBackend::endTimer() {
     const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(questionEndTime_ - questionStartTime_).count();
 
     if (currentQuestionIndex_ >= 0 && currentQuestionIndex_ < questionList_.size()) {
-        questionList_[currentQuestionIndex_].sessionTimeSpentMs_ = duration;
-        std::cout << "Question ID " << questionList_[currentQuestionIndex_].id_ << " answered in " << duration << " ms.\n";
+        auto& current = questionList_[currentQuestionIndex_];
+        current.sessionTimeSpentMs_ = duration;
+        std::println("Question ID {} answered in {} ms.", current.id_, duration);
     }
 }
 
@@ -268,9 +271,7 @@ QString ManagementBackend::getElapsedTime() const {
 }
 
 QList<QVariant> ManagementBackend::getSessionQuestionData() const {
-    QList<QVariant> result;
-    result.reserve(questionList_.size());
-    std::ranges::transform(questionList_, std::back_inserter(result), [](const QuestionData& data){return QVariant::fromValue(data);});
+    auto result = questionList_ | std::views::transform([](const QuestionData& data){return QVariant::fromValue(data);}) | std::ranges::to<QList<QVariant>>();
     return result;
 }
 
@@ -279,7 +280,7 @@ QVariant ManagementBackend::getRevivalQuestion() const {
     thread_local std::mt19937 mt{std::random_device{}()};
 
     QList<QuestionData> candidates;
-    std::ranges::remove_copy_if(questionList_, std::back_inserter(candidates), [](const QuestionData& q){return q.sessionSelectedAnswer_ == q.correctText_;});
+    std::ranges::remove_copy_if(questionList_, std::back_inserter(candidates), funcCurrentQuestionCorrect);
 
     std::uniform_int_distribution<int64_t> dist(0, candidates.size()-1);
     const auto& target = candidates.at(dist(mt));
