@@ -111,7 +111,7 @@ Page{
                 }
 
                 Text{
-                    text: "程式語言：C++, Qt
+                    text: "程式語言：C++, QML
 使用音樂：LAMBDARUNE 3: Showtime Is Over"
                     font.pointSize: 20
                     Layout.alignment: Qt.AlignHCenter
