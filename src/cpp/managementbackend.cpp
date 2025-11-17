@@ -108,9 +108,14 @@ ManagementBackend::ManagementBackend(QObject* parent)
 
     player_ = std::make_unique<QMediaPlayer>();
     player_->setAudioOutput(audioOutput_.get());
-    player_->setSource({"qrc:/sounds/sounds/Showtime Is Over - LAMBDARUNE Chapter 3 OST.mp3"});
     player_->setLoops(QMediaPlayer::Infinite);
-    //player_->setPlaybackRate(0.793);
+
+#ifdef BGM_V2
+    player_->setSource({"qrc:/sounds/sounds/Showtime Is Over - LAMBDARUNE Chapter 3 OST.mp3"});
+#else
+    player_->setSource({"qrc:/sounds/sounds/OMFG_Pizza.mp3"});
+    player_->setPlaybackRate(0.793);
+#endif
 }
 
 ManagementBackend::~ManagementBackend() {
