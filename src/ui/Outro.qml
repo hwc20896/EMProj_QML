@@ -26,7 +26,7 @@ Page{
 
                 Button{
                     id: quitGame
-                    text: "退出游戲"
+                    text: "退出遊戲"
                     Layout.alignment: Qt.AlignTop | Qt.AlignRight
                     Layout.topMargin: outroRoot.height * 0.03
                     Layout.rightMargin: outroRoot.width * 0.2
