@@ -1,7 +1,7 @@
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
 #include <QQmlContext>
-#include <iostream>
+#include <print>
 #include "managementbackend.hpp"
 
 int main(int argc, char** argv) {
@@ -18,6 +18,6 @@ int main(int argc, char** argv) {
         window->show();
         return app.exec();
     }
-    std::cout << "Unable to create window\n";
+    std::println("Unable to create window.");
     return -1;
 }
