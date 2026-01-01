@@ -17,10 +17,8 @@ namespace EMProj_QML_Backend {
             }
 
             Database(const Database&) = delete;
-            Database(Database&&) = delete;
-
             Database& operator=(const Database&) = delete;
-            Database& operator=(Database&&) = delete;
+
         private:
             explicit Database();
             ~Database() override;
@@ -49,7 +47,6 @@ namespace EMProj_QML_Backend {
             [[nodiscard]] QList<QuestionData> getQuestionData_IMPL(int count) const;
             duckdb_database question_db_ = nullptr;
             duckdb_connection question_conn_ = nullptr;
-            static constexpr auto EXCEL_FILE = "question_data.xlsx";
 
         //  Podium Data
         public:
@@ -59,6 +56,5 @@ namespace EMProj_QML_Backend {
         private:
             duckdb_database podium_db_ = nullptr;
             duckdb_connection podium_conn_ = nullptr;
-            static constexpr auto PODIUM_DB_FILE = "podium_data.db";
     };
 }

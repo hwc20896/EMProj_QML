@@ -6,6 +6,8 @@
 #include <ranges>
 #include <QDebug>
 #include <print>
+
+#include "constants.hpp"
 using EMProj_QML_Backend::Database;
 
 //  Qt Properties
@@ -33,8 +35,8 @@ int ManagementBackend::getCurrentQuestionIndex() const {
     return currentQuestionIndex_;
 }
 
-bool ManagementBackend::currentMuted() const {
-    return currentMuted_;
+bool ManagementBackend::currentMuted() {
+    return SoundManager::instance().isMuted();
 }
 
 bool ManagementBackend::isPopWrongEnabled() const {
@@ -60,6 +62,7 @@ QString ManagementBackend::revokeMatch() {
     thread_local std::mt19937 mt{std::random_device{}()};
 
     QStringList wrongOptions;
+    wrongOptions.reserve(3);
     std::ranges::remove_copy(currentQuestion.options_, std::back_inserter(wrongOptions), currentQuestion.correctText_);
     std::uniform_int_distribution dist(0LL, wrongOptions.size()-1);
     const auto targetWrongOption = wrongOptions.at(dist(mt));
@@ -76,9 +79,10 @@ void ManagementBackend::setCurrentQuestionIndex(const int index) {
 }
 
 void ManagementBackend::setCurrentMuted(const bool muted) {
-    if (muted != currentMuted_) {
-        currentMuted_ = muted;
-        audioOutput_->setMuted(muted);
+    if (auto& soundManager = SoundManager::instance();
+        muted != soundManager.isMuted()
+    ) {
+        soundManager.setMuted(muted);
         emit currentMutedChanged();
     }
 }
@@ -94,63 +98,11 @@ ManagementBackend::ManagementBackend(QObject* parent)
     : QObject(parent), correctCount_(0), incorrectCount_(0)
 {
     static_cast<void>(Database::instance());
-    correctSound_ = std::make_unique<QSoundEffect>();
-    correctSound_->setSource({"qrc:/sounds/sounds/bingo.wav"});
-    incorrectSound_ = std::make_unique<QSoundEffect>();
-    incorrectSound_->setSource({"qrc:/sounds/sounds/ohno.wav"});
-    swoon_ = std::make_unique<QSoundEffect>();
-    swoon_->setSource({"qrc:/sounds/sounds/swoon.wav"});
-    swoon_->setVolume(0.7f);
-
-    audioOutput_ = std::make_unique<QAudioOutput>();
-    audioOutput_->setVolume(0.25f);
-    audioOutput_->setMuted(currentMuted_);
-
-    player_ = std::make_unique<QMediaPlayer>();
-    player_->setAudioOutput(audioOutput_.get());
-    player_->setLoops(QMediaPlayer::Infinite);
-
-#ifdef BGM_V2
-    player_->setSource({"qrc:/sounds/sounds/Showtime Is Over - LAMBDARUNE Chapter 3 OST.mp3"});
-#else
-    player_->setSource({"qrc:/sounds/sounds/OMFG_Pizza.mp3"});
-    player_->setPlaybackRate(0.793);
-#endif
+    static_cast<void>(SoundManager::instance());
 }
 
 ManagementBackend::~ManagementBackend() {
-    this->startBackground();
     this->clearQuestions();
-}
-
-void ManagementBackend::playCorrect() const {
-    correctSound_->play();
-}
-
-void ManagementBackend::playIncorrect() const {
-    incorrectSound_->play();
-}
-
-void ManagementBackend::playSwoon() const {
-    swoon_->play();
-}
-
-void ManagementBackend::initialize() {
-    correctCount_ = 0;
-    incorrectCount_ = 0;
-    this->startBackground();
-}
-
-void ManagementBackend::startBackground() const {
-    if (player_->playbackState() != QMediaPlayer::PlayingState) {
-        player_->play();
-    }
-}
-
-void ManagementBackend::stopBackground() const {
-    if (player_->playbackState() == QMediaPlayer::PlayingState) {
-        player_->stop();
-    }
 }
 
 //  Database
@@ -178,7 +130,6 @@ void ManagementBackend::loadQuestions(const int quantity) {
 }
 
 void ManagementBackend::onQuestionDataReady(const QList<QuestionData>& q) {
-    this->startBackground();
     questionList_ = q;
     emit currentQuestionChanged();
 }
@@ -207,27 +158,16 @@ void ManagementBackend::handleAnswer(const QString& answer) {
     if (answer == question.correctText_) {
         correctCount_++;
         emit correctCountChanged();
-        this->playCorrect();
+        SoundManager::instance().playCorrect();
 
         consecutiveRevive_++;
-        if (consecutiveRevive_ >= 5) {
-            isReviveEnabled_ = true;
-            emit isReviveEnabledChanged();
-            std::println("isReviveEnabled up");
-        }
         if (question.sessionTimeSpentMs_ < 7000) {
             consecutivePopWrong_++;
-
-            //  ¬(A·B) = ¬A+¬B
-            if (consecutivePopWrong_ < 3 || isPopWrongEnabled_) return;
-            isPopWrongEnabled_ = true;
-            emit isPopWrongEnabledChanged();
-            std::println("isPopWrongEnabled up");
         }
     } else {
         incorrectCount_++;
         emit incorrectCountChanged();
-        this->playIncorrect();
+        SoundManager::instance().playIncorrect();
         consecutivePopWrong_ = 0;
         consecutiveRevive_ = 0;
     }
@@ -235,12 +175,12 @@ void ManagementBackend::handleAnswer(const QString& answer) {
 }
 
 void ManagementBackend::finalize(){
-    this->stopBackground();
+    SoundManager::instance().stopGameBackground();
 
     const auto correct = std::ranges::count_if(questionList_, funcCurrentQuestionCorrect);
     std::println("Correct answers: {} out of {}", correct, questionList_.size());
 
-    const bool ok = std::ranges::all_of(questionList_, funcCurrentQuestionCorrect);
+    const bool ok = correct == questionList_.size();
     std::println("Can be inserted to podium: {}", ok);
 
     const auto totalTime = std::accumulate(questionList_.begin(), questionList_.end(), 0,
@@ -292,3 +232,21 @@ QVariant ManagementBackend::getRevivalQuestion() const {
     return QVariant::fromValue(target);
 }
 
+void ManagementBackend::nextPageCheck() {
+    const bool a = consecutiveRevive_ >= 5 && !isReviveEnabled_;
+    const bool b = consecutivePopWrong_ >= 3 && !isPopWrongEnabled_;
+
+    if (a || b) SoundManager::instance().playAbility();
+
+    if (a) {
+        isReviveEnabled_ = true;
+        emit isReviveEnabledChanged();
+        std::println("isReviveEnabled up");
+    }
+
+    if (b) {
+        isPopWrongEnabled_ = true;
+        emit isPopWrongEnabledChanged();
+        std::println("isPopWrongEnabled up");
+    }
+}

@@ -4,9 +4,6 @@ import QtQuick.Controls
 
 Page{
     id: introRoot
-    width: 1000
-    height: 700
-    anchors.fill: parent
 
     StackLayout{
         id: rootLayout
@@ -50,6 +47,7 @@ Page{
 
                         onClicked: {
                             rootLayout.currentIndex = 1;
+                            soundManager.openRuleSound();
                         }
                     }
                 }
@@ -68,7 +66,8 @@ Page{
                         text: "開始遊戲"
                         font.pointSize: 20
                         onClicked: {
-                            backend.initialize();
+                            soundManager.playClickSound();
+                            soundManager.startGameBackground();
                             stackView.push(getGame());
                         }
                     }
@@ -126,13 +125,12 @@ Page{
 
                                 text: `這是一個問答遊戲（選擇題 / 是非題）。
 題庫共有22題，系統每輪會抽取10條題目進行遊戲。
-玩家需依次作答，答對會播放恭喜音效，答錯則播放鼓勵音效。
-正確與否，在玩家回答後都出現正確答案。
+玩家需依次作答；正確與否，在玩家回答後都出現正確答案。
 
 額外：
 - 排除卡：
     > 連續答對三題且回答時間在7秒内即可獲得。
-    > 可以在「選擇題」中使用此卡，將會播放「雷聲」並自動排除一個錯誤選項。
+    > 可以在「選擇題」中使用此卡，將會自動排除一個錯誤選項。
 - 復活卡：
     > 連續答對五題即可獲得。
     > 在回答所有10條問題後額外顯示「復活題目」供回顧學習，不改變本來答題情況。
@@ -169,6 +167,7 @@ Page{
                     Layout.alignment: Qt.AlignHCenter
                     onClicked: {
                         rootLayout.currentIndex = 0;
+                        soundManager.closeRuleSound();
                     }
                 }
             }

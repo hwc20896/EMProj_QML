@@ -12,18 +12,22 @@ Button{
     readonly property string unmutedIcon: "qrc:/images/drawables/unmute.png"
 
     flat: true
-    icon{
-        source: backend.isMuted? mutedIcon: unmutedIcon
-        width: iconSize.width
-        height: iconSize.height
-        color: "transparent"
-    }
+    icon.source: soundManager.isMuted? mutedIcon: unmutedIcon
+    icon.width: iconSize.width
+    icon.height: iconSize.height
+    icon.color: "transparent"
     onClicked: {
-        backend.isMuted = !backend.isMuted;
+        soundManager.isMuted = !soundManager.isMuted;
     }
 
     background: Rectangle{
-        color: "white"
+        color: {
+            if (parent.pressed) return "#e6e6e6";
+            if (parent.hovered) return "#f0f0f0";
+            return "#fff";
+        }
         radius: 5
+        border.color: "#bdbdbd"
+        border.width: 1
     }
 }

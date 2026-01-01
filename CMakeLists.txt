@@ -7,12 +7,15 @@ find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick Multimedia Concurrent)
 
 set(FILES
     main.cpp
-    resources.qrc
-    src/headers/managementbackend.hpp
-    src/cpp/managementbackend.cpp
-    src/headers/questiondata.hpp
-    src/cpp/database.cpp
-    src/headers/database.hpp
+        resources.qrc
+        src/headers/managementbackend.hpp
+        src/cpp/managementbackend.cpp
+        src/headers/soundmanager.hpp
+        src/cpp/soundmanager.cpp
+        src/headers/questiondata.hpp
+        src/cpp/database.cpp
+        src/headers/database.hpp
+        src/headers/constants.hpp
 )
 
 qt_standard_project_setup()

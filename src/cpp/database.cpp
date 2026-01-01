@@ -4,6 +4,8 @@
 #include <QtConcurrentRun>
 #include <print>
 
+#include "constants.hpp"
+
 namespace EMProj_QML_Backend {
     Database::Database() {
         watcher_ = std::make_unique<QFutureWatcher<void>>(this);
@@ -37,7 +39,7 @@ namespace EMProj_QML_Backend {
 
             const auto query = std::format(
                 "CREATE TABLE questions AS SELECT * FROM read_xlsx('{}', header=true, all_varchar = true);",
-                EXCEL_FILE
+                Paths::DB_QUESTION_FILE
             );
 
             duckdb_result result;
@@ -47,7 +49,7 @@ namespace EMProj_QML_Backend {
             std::println("[DuckDB] Loaded Excel file into in-memory table successfully.");
 
             // Podium database
-            if (duckdb_open(PODIUM_DB_FILE, &podium_db_) != DuckDBSuccess)
+            if (duckdb_open(Paths::DB_PODIUM_FILE, &podium_db_) != DuckDBSuccess)
                 throw std::runtime_error("Failed to open Podium DuckDB database.");
             if (duckdb_connect(podium_db_, &podium_conn_) != DuckDBSuccess)
                 throw std::runtime_error("Failed to connect to Podium DuckDB database.");

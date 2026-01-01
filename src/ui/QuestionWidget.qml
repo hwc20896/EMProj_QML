@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Shapes
 
 ColumnLayout{
     id: questionRoot
@@ -66,7 +65,9 @@ ColumnLayout{
                     // 核心：动态背景色
                     color: {
                         if (!answerRevealed) {
-                            return parent.pressed ? "#E0E0E0" : "#FFFFFF";
+                            if (parent.pressed) return "#e6e6e6";
+                            if (parent.hovered) return "#f0f0f0";
+                            return "#fff";
                         }
 
                         // 答案揭示状态
@@ -89,39 +90,51 @@ ColumnLayout{
                     }
                 }
 
-                // 劃線效果
-
-                Shape {
+                Rectangle {
                     id: strike
                     anchors.fill: parent
-                    visible: btn.isWrong
+                    visible: btn.isWrong && btn.opacity > 0
                     opacity: 0.0
                     property real margin: 6
-
-
-                    ShapePath {
-                        strokeColor: "red"
-                        strokeWidth: 2
-                        capStyle: ShapePath.RoundCap
-                        startX: strike.margin
-                        startY: strike.margin
-                        PathLine { x: strike.width - strike.margin; y: strike.height - strike.margin }
+                    color: "transparent"
+                    // 使用旋转的Rectangle作为划线
+                    transform: Rotation {
+                        origin.x: strike.width / 2
+                        origin.y: strike.height / 2
+                        angle: (Math.random() >= 0.5 ? 1 : -1) * 20 // 20度角
                     }
 
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: parent.width * 1.1  // 确保线条足够长
+                        height: 6  // 线条宽度
+                        color: "#ffaa00"
+                    }
 
-                    // 線條動畫
                     NumberAnimation on opacity {
                         id: strikeFade
-                        from: 0.0
+                        from: 0.0 
                         to: 1.0
                         duration: 200
                         easing.type: Easing.InOutQuad
                         running: false
 
+                        onStarted: {
+                            strike.visible = true;
+                        }
+
                         onStopped: {
-                            if (btn.isWrong) fadeOut.start();
+                            if (btn.isWrong) {
+                                fadeOutTimer.start();
+                            }
                         }
                     }
+                }
+
+                Timer {
+                    id: fadeOutTimer
+                    interval: 50
+                    onTriggered: fadeOut.start()
                 }
 
                 PropertyAnimation {
@@ -132,13 +145,17 @@ ColumnLayout{
                     to: 0.0
                     duration: 400
                     easing.type: Easing.InOutQuad
-                    onStopped: btn.enabled = false; // ✅ 安全關閉點擊
+                    onStopped: {
+                        btn.enabled = false; // ✅ 安全關閉點擊
+                        // 隐藏Shape以防止后续绘制问题
+                        strike.visible = false;
+                    }
                 }
 
                 function markWrong() {
                     if (isWrong) return;
                     isWrong = true;
-                    backend.playSwoon();
+                    soundManager.playSwoon();
                     strikeFade.start();
                 }
             }

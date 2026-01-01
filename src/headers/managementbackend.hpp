@@ -1,10 +1,7 @@
 #pragma once
 
-#include <QSoundEffect>
-#include <QMediaPlayer>
-#include <QAudioOutput>
-#include <memory>
 #include "database.hpp"
+#include "soundmanager.hpp"
 #include <chrono>
 
 class ManagementBackend final : public QObject {
@@ -25,7 +22,7 @@ class ManagementBackend final : public QObject {
         [[nodiscard]] QVariant currentQuestion() const;
         [[nodiscard]] int progress() const;
         [[nodiscard]] int getCurrentQuestionIndex() const;
-        [[nodiscard]] bool currentMuted() const;
+        [[nodiscard]] static bool currentMuted();
         [[nodiscard]] bool isPopWrongEnabled() const;
         [[nodiscard]] bool isReviveEnabled() const;
     public slots:
@@ -50,22 +47,17 @@ class ManagementBackend final : public QObject {
     public:
         explicit ManagementBackend(QObject* parent = nullptr);
         ~ManagementBackend() override;
-        Q_INVOKABLE void initialize();
         Q_INVOKABLE void finalize();
         Q_INVOKABLE void startTimer();
+        Q_INVOKABLE void nextPageCheck();
         void endTimer();
     private:
         int correctCount_, incorrectCount_;
-        std::unique_ptr<QSoundEffect> correctSound_, incorrectSound_;
-        std::unique_ptr<QMediaPlayer> player_;
-        std::unique_ptr<QAudioOutput> audioOutput_;
-        std::unique_ptr<QSoundEffect> swoon_;
 
         std::chrono::steady_clock::time_point questionStartTime_, questionEndTime_;
 
         int currentQuestionIndex_ = -1;
         int progress_ = 0;
-        bool currentMuted_ = true;
         int totalElapsedMS_ = 0;
 
         QList<QuestionData> questionList_;
@@ -82,13 +74,7 @@ class ManagementBackend final : public QObject {
 
     //  Invokable
     public:
-        Q_INVOKABLE void playCorrect() const;
-        Q_INVOKABLE void playIncorrect() const;
 
-        Q_INVOKABLE void startBackground() const;
-        Q_INVOKABLE void stopBackground() const;
-
-        Q_INVOKABLE void playSwoon() const;
         Q_INVOKABLE QString revokeMatch();
 
     //  Task 2
@@ -96,7 +82,7 @@ class ManagementBackend final : public QObject {
 
     //  Database
         Q_INVOKABLE void loadQuestions(int quantity);
-        Q_INVOKABLE void handleAnswer(const QString &answer);
+        Q_INVOKABLE void handleAnswer(const QString& answer);
 
     //  Outro
         [[nodiscard]] Q_INVOKABLE QString getElapsedTime() const;

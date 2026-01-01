@@ -4,9 +4,6 @@ import QtQuick.Layouts
 
 Page{
     id: gamePageRoot
-    width: 1000
-    height: 700
-    anchors.fill: parent
 
     property int correctCount: backend.correctCount
     property int incorrectCount: backend.incorrectCount
@@ -111,7 +108,7 @@ Page{
             id: questionWidget
             title: currentQuestion.questionTitle? currentQuestion.questionTitle : "載入中...\n如果一直停留在這裏，請上報GitHub Issues。"
             optionText: currentQuestion.options || []
-            descriptionText: currentQuestion.description
+            descriptionText: currentQuestion.description || ""
             opacity: 1.0
         }
 
@@ -131,7 +128,10 @@ Page{
                 font.pointSize: 15
                 enabled: backend.currentQuestionIndex > 0
                 visible: backend.currentQuestionIndex > 0
-                onClicked: backend.currentQuestionIndex -= 1;
+                onClicked: {
+                    soundManager.playClickSound();
+                    backend.currentQuestionIndex -= 1;
+                }
             }
 
             Item{ Layout.fillWidth: true }
@@ -161,8 +161,18 @@ Page{
                 }
 
                 onClicked: {
-                    if (incorrectCount === 0) return;
-                    isReviveChecked = !isReviveChecked;
+                    if (!backend.isReviveEnabled || incorrectCount === 0) {
+                        soundManager.playCantSelectSound();
+                        return;
+                    }
+                    if (!isReviveChecked){
+                        isReviveChecked = true;
+                        soundManager.playReviveActivatingSound();
+                    }
+                    else{
+                        isReviveChecked = false;
+                        soundManager.playReviveDeactivatingSound();
+                    }
                 }
             }
 
@@ -191,7 +201,10 @@ Page{
 
                 onClicked: function(){
                     const option = backend.revokeMatch();
-                    if (option.length === 0) return;
+                    if (option.length === 0){
+                        soundManager.playCantSelectSound();
+                        return;
+                    }
                     questionWidget.popOption(option);
                 }
             }
@@ -205,8 +218,8 @@ Page{
                 font.pointSize: 15
                 enabled: answerRevealed
                 onClicked: {
+                    soundManager.playClickSound();
                     if (isInReviveMode) {
-                        // 复活模式下的特殊处理
                         console.log("Revive question completed.")
                         backend.finalize();
                         stackView.replace(getOutro())
@@ -215,6 +228,7 @@ Page{
 
                     if (backend.currentQuestionIndex < totalCount - 1) {
                         backend.startTimer();
+                        backend.nextPageCheck();
                         backend.currentQuestionIndex += 1;
                     } else {
                         console.log("Last page reached.")
@@ -289,11 +303,11 @@ Page{
 
         if (isCorrect) {
             // 答对了，播放正确声音
-            backend.playCorrect();
+            soundManager.playCorrect();
             console.log("复活题目答对了！");
         } else {
             // 答错了，播放错误声音
-            backend.playIncorrect();
+            soundManager.playIncorrect();
             console.log("复活题目答错了");
         }
 

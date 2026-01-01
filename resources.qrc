@@ -21,17 +21,30 @@
         <file>assets/Revive_Stone.png</file>
         <file>assets/Revive_Stone_Blackout.png</file>
     </qresource>
-    <qresource prefix="/sounds">
+    <qresource prefix="/effects">
         <file>sounds/bingo.wav</file>
         <file>sounds/ohno.wav</file>
         <file>sounds/swoon.wav</file>
-        <file>sounds/OMFG_Pizza.mp3</file>
-        <file>sounds/Showtime Is Over - LAMBDARUNE Chapter 3 OST.mp3</file>
+        <file>sounds/snd_knight_cut2.wav</file>
+        <file>sounds/snd_won.wav</file>
+        <file>sounds/snd_error.wav</file>
+        <file>sounds/snd_board_text_main.wav</file>
+        <file>sounds/snd_board_text_main_end.wav</file>
+        <file>sounds/snd_ominous.wav</file>
+        <file>sounds/snd_ominous_cancel.wav</file>
+        <file>sounds/snd_boost.wav</file>
+        <file>sounds/snd_click.wav</file>
+        <file>sounds/snd_cantselect.wav</file>
     </qresource>
     <qresource prefix="/rank">
         <file>assets/Dungeon_Ranking_A.png</file>
         <file>assets/Dungeon_Ranking_B.png</file>
         <file>assets/Dungeon_Ranking_C.png</file>
         <file>assets/Dungeon_Ranking_S.png</file>
+    </qresource>
+    <qresource prefix="/music">
+        <file>sounds/mus_pizza.mp3</file>
+        <file>sounds/mus_showtime_is_over.mp3</file>
+        <file>sounds/mus_my_castle_town.mp3</file>
     </qresource>
 </RCC>

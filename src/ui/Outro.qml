@@ -50,7 +50,10 @@ Page{
                         Layout.preferredHeight: 100
                         Layout.preferredWidth: 300
                         font.pointSize: 20
-                        onClicked: outroLayout.currentIndex = 2;
+                        onClicked: {
+                            soundManager.startReviewBackground();
+                            outroLayout.currentIndex = 2;
+                        }
                     }
 
                     Button{
@@ -72,7 +75,10 @@ Page{
                     text: "© 2025."
                     font.pixelSize: 20
                     Layout.alignment: Qt.AlignBottom | Qt.AlignRight
-                    onClicked: outroLayout.currentIndex = 1
+                    onClicked: {
+                        soundManager.openRuleSound();
+                        outroLayout.currentIndex = 1;
+                    }
                 }
             }
         }
@@ -95,7 +101,7 @@ Page{
                 }
 
                 Text{
-                    text: "所屬隊伍：葉洪古范·雙法F4"
+                    text: "所屬隊伍：葉洪古范 · 雙法F4"
                     font.pointSize: 20
                     Layout.alignment: Qt.AlignHCenter
                 }
@@ -112,7 +118,7 @@ Page{
 
                 Text{
                     text: "程式語言：C++, QML
-使用音樂：LAMBDARUNE 3: Showtime Is Over"
+使用音樂：Lambdarune 3: Showtime Is Over"
                     font.pointSize: 20
                     Layout.alignment: Qt.AlignHCenter
                 }
@@ -130,7 +136,10 @@ https://github.com/hwc20896/EMProj_QML"
                     font.pointSize: 20
                     Layout.preferredHeight: 70
                     Layout.preferredWidth: 120
-                    onClicked: outroLayout.currentIndex = 0
+                    onClicked: {
+                        soundManager.closeRuleSound();
+                        outroLayout.currentIndex = 0;
+                    }
                 }
             }
         }
@@ -208,7 +217,10 @@ https://github.com/hwc20896/EMProj_QML"
                         text: "返回"
                         font.pointSize: 20
 
-                        onClicked: outroLayout.currentIndex = 0;
+                        onClicked: {
+                            outroLayout.currentIndex = 0;
+                            soundManager.stopReviewBackground();
+                        }
                     }
 
                     Button{
